@@ -1,0 +1,58 @@
+﻿<Window x:Class="CallMetrics.Menus.TeamsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CallMetrics.Menus" 
+        xmlns:controls="clr-namespace:CallMetrics.Controls"
+        xmlns:l="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Title="Assign reps to Teams" Height="650" Width="650" AllowDrop="True">
+    <Grid >
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" MinWidth="120" MaxWidth="250"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="auto"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.ColumnSpan="3" Background="#FF373737" Opacity="0.95" BorderThickness="0.5" BorderBrush="Black" CornerRadius="4"/>
+
+        <l:Card Grid.ColumnSpan="3" Grid.RowSpan="3" MouseLeftButtonDown="Window_MouseLeftButtonDown" Margin="1"/>
+
+
+        <!-- Unassigned Reps -->
+
+        <Label Content="Assign to Teams" FontSize="20" FontWeight="Bold" Foreground="White" Padding="10,0,0,0" VerticalAlignment="Top" Margin="10" HorizontalAlignment="Center" MouseLeftButtonDown="Window_MouseLeftButtonDown"/>
+
+        <l:Card Background="#FF2D2D2D" Margin="10,50,5,10" AllowDrop="True" DragOver="FreeRepsWrapPanel_DragOver" Drop="FreeRepsWrapPanel_Drop" HorizontalAlignment="Stretch">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel x:Name="LooseRepsPanel" Grid.Column="0" AllowDrop="True" DragOver="FreeRepsWrapPanel_DragOver" Drop="FreeRepsWrapPanel_Drop" MaxWidth="240" UseLayoutRounding="False">
+                    <controls:RepItem/>
+                    <controls:RepItem/>
+                    <controls:RepItem/>
+                    <controls:RepItem/>
+                    <controls:RepItem/>
+                    <controls:RepItem/>
+                </StackPanel>
+            </ScrollViewer>
+        </l:Card> 
+
+        <!-- Teams DataGrid -->
+        <Button Content="Add" Grid.Column="1" Margin="0,7,210,0" Padding="10,5" HorizontalAlignment="right" VerticalAlignment="Top" Click="AddNewTeam_Click" Background="#FF3686DA" Foreground="White"/>
+
+        <Label x:Name="HintLabel" Content="New Team Name" Grid.Column="1" Margin="0,10,103,0" Padding="5" HorizontalAlignment="Right" VerticalAlignment="Top" FontStyle="Italic" Foreground="#FFB3B3B3" Background="Transparent"/>
+
+        <TextBox x:Name="NewTeamNameTextBox" Grid.Column="1" Margin="0,7,5,0" Padding="5" HorizontalAlignment="Right" Height="32" VerticalAlignment="Top" Width="200" TextChanged="NewTeamNameTextBox_TextChanged" Background="#4C101010" Foreground="White" KeyDown="NewTeamNameTextBox_KeyDown"/>
+
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Grid.Column="1" Grid.ColumnSpan="2" Margin="0,42,2,2">
+            <StackPanel  x:Name="TeamsListBox"  >
+                <controls:TeamControl/>
+                <controls:TeamControl/>
+            </StackPanel>
+        </ScrollViewer>
+
+        <StackPanel Orientation="Horizontal" Margin="0,5,5,0" Grid.Column="2" VerticalAlignment="Top" >
+            <Button Margin="2" Content="X" Background="Red" FontSize="18" Padding="12,3,12,5" Click="CloseButton_Click" Foreground="White"/>
+        </StackPanel>
+    </Grid>
+</Window>

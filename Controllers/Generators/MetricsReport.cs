@@ -1,0 +1,66 @@
+﻿using CallMetrics.Controllers.Generators.WorkSheets;
+using CallMetrics.Models;
+using CallMetrics.Utilities;
+using Microsoft.Office.Interop.Excel;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CallMetrics.Controllers.Generators
+{
+    public class MetricsReport
+    {
+        private Application excelApp;
+        private Workbook workbook;
+        private Worksheet worksheet;
+
+        public void Generate(List<RepData> reps, string directoryPath)
+        {
+            try
+            {
+                var generator = new SupportRepMetrics();
+
+                excelApp = new Microsoft.Office.Interop.Excel.Application
+                {
+                    Visible = false,
+                    DisplayAlerts = false
+                };
+
+                // setup and create file
+                string fileName = @"\SupportMetrics_" + UniqueTimeCode();
+                workbook = excelApp.Workbooks.Add(Type.Missing);
+
+                // remove reps that are on a team which is in the ignore metrics list
+                reps.RemoveAll(r => Settings.Teams.Any(t => t.Value.Contains(r.Name) && Settings.IgnoreTeamMetrics.Contains(t.Key)));
+
+                // create support metrics report worksheet
+                worksheet = (Worksheet)workbook.ActiveSheet;
+                worksheet = generator.Create(reps, worksheet);
+
+                // save the workbook
+                workbook.SaveAs(directoryPath + fileName + ".xlsx");
+                workbook.Close(false);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error generating report: " + ex.Message);
+            }
+            finally
+            {
+                excelApp.Quit();
+
+                Marshal.ReleaseComObject(worksheet);
+                Marshal.ReleaseComObject(workbook);
+                Marshal.ReleaseComObject(excelApp);
+            }            
+        }
+
+        private string UniqueTimeCode()
+        {
+            return DateTime.Now.ToString("yyyyMMdd_HHmmss");
+        }
+    }
+}
