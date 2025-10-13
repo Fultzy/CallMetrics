@@ -67,7 +67,14 @@ namespace CallMetrics.Models
             if (Name == "-- TOTAL --") return Name;
 
             string[] name = Name.Split(' ');
-            return name[0] + " " + name[1][0];
+            if (name.Length > 1)
+            {
+                return name[0] + " " + name[1][0];
+            }
+            else
+            {
+                return name[0];
+            }
         }
 
         public string AverageCallTime()
