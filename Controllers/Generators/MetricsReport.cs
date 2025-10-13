@@ -19,8 +19,8 @@ namespace CallMetrics.Controllers.Generators
 
         public void Generate(List<RepData> reps, string directoryPath)
         {
-            //try
-            //{
+            try
+            {
                 var generator = new SupportRepMetrics();
 
                 excelApp = new Microsoft.Office.Interop.Excel.Application
@@ -43,19 +43,19 @@ namespace CallMetrics.Controllers.Generators
                 // save the workbook
                 workbook.SaveAs(directoryPath + fileName + ".xlsx");
                 workbook.Close(false);
-            //}
-            //catch (Exception ex)
-            //{
-            //    throw new Exception("Error generating report: " + ex.Message);
-            //}
-            //finally
-            //{
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error generating report: " + ex.Message);
+            }
+            finally
+            {
                 excelApp.Quit();
 
                 Marshal.ReleaseComObject(worksheet);
                 Marshal.ReleaseComObject(workbook);
                 Marshal.ReleaseComObject(excelApp);
-            //}            
+            }            
         }
 
         private string UniqueTimeCode()
