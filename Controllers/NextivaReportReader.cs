@@ -79,7 +79,7 @@ namespace CallMetrics.Controllers
         }
 
 
-//Call Type	Transfer User	User Name	Time	Duration	Direction	Answered	State	From	To	Internal	External
+//Call Type	Transfer User	Name	Time	Duration	Direction	Answered	State	From	To	Internal	External
         public void ParseCallRow(string[] columns)
         {
             CallData call = new();
@@ -88,10 +88,10 @@ namespace CallMetrics.Controllers
 
             if (call.CallType == "Inbound call")
             {
-                call.UserName = columns[Headers["User Name"]];
+                call.UserName = columns[Headers["Name"]];
                 call.UserExtention = columns[Headers["To"]];
                 call.Time = DateTime.Parse(columns[Headers["Time"]]);
-                call.Duration = int.Parse(columns[Headers["Duration"]]);
+                call.Duration = (int)Math.Round(decimal.Parse(columns[Headers["Duration"]]));
                 call.State = columns[Headers["State"]];
                 call.Caller = columns[Headers["From"]];
 
@@ -112,10 +112,10 @@ namespace CallMetrics.Controllers
             }
             else if (call.CallType == "Outbound call")
             {
-                call.UserName = columns[Headers["User Name"]];
+                call.UserName = columns[Headers["Name"]];
                 call.UserExtention = columns[Headers["From"]];
                 call.Time = DateTime.Parse(columns[Headers["Time"]]);
-                call.Duration = int.Parse(columns[Headers["Duration"]]);
+                call.Duration = (int)Math.Round(decimal.Parse(columns[Headers["Duration"]]));
                 call.State = columns[Headers["State"]];
                 call.Caller = columns[Headers["To"]];
 
