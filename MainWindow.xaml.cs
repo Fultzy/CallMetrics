@@ -1,5 +1,5 @@
-﻿using CallMetrics.Controllers;
-using CallMetrics.Controllers.Generators;
+﻿using CallMetrics.Controllers.Generators;
+using CallMetrics.Controllers.Readers.Nextiva;
 using CallMetrics.Menus;
 using CallMetrics.Models;
 using CallMetrics.Utilities;
@@ -32,6 +32,16 @@ namespace CallMetrics
             InitializeComponent();
             Settings.Load();
             this.SourceInitialized += MainWindow_SourceInitialized;
+            ReportGenerator.ReportProgressChanged += (s, e) => UpdateProgressBar(e);
+            ProgressBar.Value = 0;
+        }
+
+        public void UpdateProgressBar(int value)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                ProgressBar.Value = value;
+            });
         }
 
         private void ImportNextivaReport_Click(object sender, RoutedEventArgs e)
@@ -44,27 +54,66 @@ namespace CallMetrics
             var result = openFileDialog.ShowDialog();
             if (result == true)
             {
+                ClearButton.IsEnabled = false;
+                ImportButton.IsEnabled = false;
+                GenerateButton.IsEnabled = false;
+
                 var filePath = openFileDialog.FileName;
                 ImportResults = ReportReader.Read(filePath);
+                if (ImportResults.Count == 0)
+                {
+                    Notify(Notifications.ImportFail);
+                    return;
+                }
+
                 RepsDataGrid.ItemsSource = ImportResults;
                 RepsDataGrid.Items.Refresh();
+
+                ClearButton.IsEnabled = true;
+                ImportButton.IsEnabled = true;
+                GenerateButton.IsEnabled = true;
+
+                Notify(Notifications.ImportComplete);
             }
         }
 
-        private void GenerateReport_Click(object sender, RoutedEventArgs e)
+        private async void GenerateReport_Click(object sender, RoutedEventArgs e)
         {
             if (ImportResults.Count == 0)
             {
-                MessageBox.Show("No data to generate report. Please import a Nextiva report first. Loser", "No Data", MessageBoxButton.OK, MessageBoxImage.Warning);
+                Notify(Notifications.NoData);
                 return;
             }
+            
+            if (Settings.Teams.Count == 0)
+            {
+                Notify(Notifications.NoTeams);
+            }
 
-            ReportGenerator.Generate(ImportResults, OutputDirectory);
+            GenerateButton.IsEnabled = false;
+            ImportButton.IsEnabled = false;
+            ClearButton.IsEnabled = false;
+            Task task = Task.Run(() =>
+            {
+                ReportGenerator.Generate(ImportResults, OutputDirectory);
+            });
+
+            await task;
+            ClearButton.IsEnabled = true;
+            ImportButton.IsEnabled = true;
+            GenerateButton.IsEnabled = true;
+            Notify(Notifications.GenerateComplete);
+            ProgressBar.Value = 0;
+        }
+
+        private void Notify(Notification noti)
+        {
+            var notification = new Controls.NotificationCard(noti);
+            NotificationStack.Children.Add(notification);
         }
 
         private void SetRepsToTeams_Click(object sender, RoutedEventArgs e)
         {
-            // open the TeamsWindow.xaml
             TeamsWindow teamsWindow = new TeamsWindow(ImportResults);
             teamsWindow.ShowDialog();
         }

@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:CallMetrics" xmlns:l="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:local="clr-namespace:CallMetrics" xmlns:l="http://materialdesigninxaml.net/winfx/xaml/themes" xmlns:controls="clr-namespace:CallMetrics.Controls"
         mc:Ignorable="d"
         Style="{StaticResource MaterialDesignWindow}" AllowsTransparency="True"
         WindowStyle="None"
@@ -26,18 +26,22 @@
         <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="0" Grid.ColumnSpan="2">
             <Image Source="pack://application:,,,/Icon/CallMetrics_Logo.png" Height="32" Width="32" Margin="10,0,0,0" VerticalAlignment="Center" MouseDown="Window_MouseLeftButtonDown"/>
             <Label Content="CallMetrics" FontSize="20" FontWeight="Bold" Foreground="White" Padding="10,0,0,0" VerticalAlignment="Center" MouseDown="Window_MouseLeftButtonDown"/>
-            <Button Content="Import Nextiva Report" Margin="20,0,0,0" Padding="10,5" Click="ImportNextivaReport_Click" Foreground="White"/>
-            <Button Content="Generate Report" Margin="20,0,0,0" Padding="10,5" Click="GenerateReport_Click" Foreground="White"/>
+            <Button x:Name="ImportButton" Content="Import Nextiva Report" Margin="20,0,0,0" Padding="10,5" Click="ImportNextivaReport_Click" Foreground="White"/>
+            <Button x:Name="GenerateButton" Content="Generate Report" Margin="20,0,0,0" Padding="10,5" Click="GenerateReport_Click" Foreground="White"/>
             <Button Content="Set Reps to Teams" Margin="20,0,0,0" Padding="10,5" Click="SetRepsToTeams_Click" Foreground="White"/>
-            <Button Content="Clear Data" Margin="20,0,0,0" Padding="10,5" Click="ClearData_Click" Foreground="White"/>
+            <Button x:Name="ClearButton" Content="Clear Data" Margin="20,0,0,0" Padding="10,5" Click="ClearData_Click" Foreground="White"/>
         </StackPanel>
 
-        <StackPanel Orientation="Horizontal" Margin="0,5,0,0" Grid.Column="1">
+        <StackPanel Orientation="Horizontal" Margin="0,5,7,0" Grid.Column="1">
             <Button Margin="2" Content="X" Background="Red" FontSize="18" Padding="12,3,12,5" Click="CloseButton_Click" Foreground="White"/>
         </StackPanel>
 
-        <DataGrid x:Name="RepsDataGrid" Grid.Row="1" Margin="10,10,10,10" AutoGenerateColumns="True" IsReadOnly="True" Background="#FF2D2D2D" Foreground="#E5FFFFFF" Grid.ColumnSpan="2"/>
+        <DataGrid x:Name="RepsDataGrid" Grid.Row="1" Margin="10,10,10,5" AutoGenerateColumns="True" IsReadOnly="True" Background="#FF2D2D2D" Foreground="#E5FFFFFF" Grid.ColumnSpan="2"/>
 
-        <ProgressBar x:Name="progressBar" Grid.Row="2" Height="10" Margin="1,1,1,1" Minimum="0" Maximum="100" Value="0" Grid.ColumnSpan="2"/>
+        <!-- Notifications -->
+        <StackPanel x:Name="NotificationStack" Grid.ColumnSpan="3" Grid.RowSpan="3" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="10,20" >
+        </StackPanel>
+        
+        <ProgressBar x:Name="ProgressBar" Grid.Row="2" Height="10" Margin="10,1,10,5" Minimum="0" Maximum="100" Grid.ColumnSpan="2" Foreground="#FF174F73" />
     </Grid>
 </Window>

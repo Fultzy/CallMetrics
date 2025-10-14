@@ -13,19 +13,23 @@ using CallMetrics.Utilities;
 using System.Windows.Controls;
 using System.Drawing;
 using System.Windows.Media;
+using CallMetrics.Controllers.Readers.Nextiva;
 
 namespace CallMetrics.Controllers.Generators.WorkSheets
 {
 
     public class SupportRepMetrics
     {
-
         public RepData AverageRep = null;
         public RepData TotalRep = null;
 
         public Dictionary<string, int> TicketsFormulaSourceRows = new();
-
         public int rankCount = 10; // number of reps to show in the average lineup table
+
+        private double percentageStep = 0;
+        private double currentProgress = 0;
+
+        public event EventHandler<int> ProgressChanged;
 
         public Worksheet Create(List<RepData> reps, Worksheet worksheet)
         {
@@ -48,13 +52,11 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
             // set the row counter
             int row = 1;
-            
+            percentageStep = CalculateProgressSteps(reps, rankCount);
+
             DateRange dateRange = new DateRange();
             dateRange.StartDate = reps.Min(r => r.Calls.Min(c => c.Time));
             dateRange.EndDate = reps.Max(r => r.Calls.Max(c => c.Time));
-
-            // Add Sheet wide conditioning
-            ApplyBoldIfAverage(worksheet);
 
             // Create average and total Users
             AverageRep = CreateAverageUser(reps);
@@ -70,7 +72,6 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             worksheet.Range["B1"].HorizontalAlignment = XlHAlign.xlHAlignRight;
             worksheet.Range["B2"].HorizontalAlignment = XlHAlign.xlHAlignLeft;
 
-
             row++;
             row++;
 
@@ -79,7 +80,6 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             worksheet = AddSupportHeader(worksheet, row);
             row++;
             worksheet = AddSupportWideMetrics(reps, worksheet, row);
-
 
             row++;
             row++;
@@ -109,6 +109,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
 
                 worksheet = AddUserMetrics(user, worksheet, row);
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
                 userCtr++;
                 row++;
             }
@@ -126,8 +127,6 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
             /////////// Individual Teams Tables
             worksheet = AddEachTeamsMetrics(reps, worksheet, row);
-
-
 
             // format the worksheet
             worksheet = FormatWorksheet(worksheet, row, rankCount);
@@ -195,7 +194,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
         ///////// SECOND TABLE
         private Worksheet AddUserHeader(Worksheet worksheet, int row)
         {
-            worksheet.Cells[row, 1] = "Tech Support";
+            worksheet.Cells[row, 1] = "Name";
             worksheet.Cells[row, 2] = "Tickets";
             worksheet.Cells[row, 3] = "Wkd Tickets";
             worksheet.Cells[row, 4] = "Adj Tickets";
@@ -274,8 +273,6 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
         }
 
 
-
-
         ///////// THIRD TABLE
         private Worksheet AddAverageLineupHeader(Worksheet worksheet, int row)
         {
@@ -340,6 +337,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
                 // Value =SMALL(I9:I23, 10)
                 worksheet.Cells[row + rank, 7].Formula =
                     $"=SMALL(I{9}:I{9 + reps.Count - 1}, A{row + rank})";
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
                 rank++;
             }
 
@@ -352,6 +350,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
                 worksheet.Cells[row + rank, 4] = user.LastInitial();
                 worksheet.Cells[row + rank, 5] = user.AdjustedCalls();
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
                 rank++;
             }
 
@@ -362,6 +361,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
                 worksheet.Cells[row + rank, 8] = user.LastInitial();
                 worksheet.Cells[row + rank, 9] = user.FormatedDuration(Convert.ToInt32(user.AverageDuration()));
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
                 rank++;
             }
 
@@ -372,6 +372,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
                 worksheet.Cells[row + rank, 10] = user.LastInitial();
                 worksheet.Cells[row + rank, 11] = user.FormatedDuration(user.TotalDuration);
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
                 rank++;
             }
 
@@ -382,6 +383,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
                 worksheet.Cells[row + rank, 12] = user.LastInitial();
                 worksheet.Cells[row + rank, 13] = user.Over30Percentage();
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
                 rank++;
             }
 
@@ -392,6 +394,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
                 worksheet.Cells[row + rank, 14] = user.LastInitial();
                 worksheet.Cells[row + rank, 15] = user.Over60Percentage();
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
                 rank++;
             }
 
@@ -506,22 +509,13 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
                 worksheet.Cells[aRow, 2].Formula = "=IF(SUM(B" + (aRow + 1) + ":B" + (aRow + team.Value.Count) + ")<=0,0,ROUND(AVERAGE(B" + (aRow + 1) + ":B" + (aRow + team.Value.Count) + "),2))";
                 worksheet.Cells[aRow, 3].Formula = "=IF(SUM(C" + (aRow + 1) + ":C" + (aRow + team.Value.Count) + ")<=0,0,ROUND(AVERAGE(C" + (aRow + 1) + ":C" + (aRow + team.Value.Count) + "),2))";
 
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
             }
             return worksheet;
         }
 
 
-
         ///////// formatting and helpers
-        private Worksheet ApplyBoldIfAverage(Worksheet sheet)
-        {
-            // add a condition to the entire sheet to make any cell with -- AVERAGE -- bold aswell the cell to its right
-
-            // idk dude this is hard
-
-            return sheet;
-        }
-
         private RepData CreateTotalUser(List<RepData> reps)
         {
             RepData totalUser = new RepData();
@@ -667,7 +661,32 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             return worksheet;
         }
 
-        
+        public static double CalculateProgressSteps(List<RepData> reps, int rankCount)
+        {
+            int total = 0;
+
+            // each rep on second table
+            foreach (var rep in reps)
+            {
+                total += rep.Calls.Count;
+            }
+
+            // each row for average lineup table
+            total += rankCount * 6; // 6 columns per rank
+
+            // each team table
+            foreach (var team in Settings.Teams)
+            {
+                if (team.Value.Count == 0)
+                    continue;
+
+                if (Settings.IgnoreTeamMetrics.Contains(team.Key)) continue; // skip ignored teams
+                total += team.Value.Count;
+            }
+
+            return total * .0005;
+        }
+
 
         private string numToLetter(int num)
         {

@@ -116,6 +116,12 @@ namespace CallMetrics.Menus
         public void RefreshRepsList()
         {
             LooseRepsPanel.Children.Clear();
+            if(_reps == null || _reps.Count == 0)
+            {
+                // show warning card
+                var warningCard = new RepWarningCard();
+                LooseRepsPanel.Children.Add(warningCard);
+            }
 
             foreach (var rep in _reps)
             {
@@ -124,7 +130,6 @@ namespace CallMetrics.Menus
                     var repItem = new Controls.RepItem(rep.Name);
                     LooseRepsPanel.Children.Add(repItem);
                 }
-
             }
         }
 

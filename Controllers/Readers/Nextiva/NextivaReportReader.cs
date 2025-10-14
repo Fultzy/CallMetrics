@@ -8,7 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace CallMetrics.Controllers
+namespace CallMetrics.Controllers.Readers.Nextiva
 {
     public class NextivaReportReader
     {
@@ -85,55 +85,36 @@ namespace CallMetrics.Controllers
             CallData call = new();
 
             call.CallType = columns[Headers["Call Type"]];
+            call.UserName = NextivaHelper.GetName(Headers, columns);
+            call.Time = DateTime.Parse(columns[Headers["Time"]]);
+            call.Duration = NextivaHelper.GetDurationInSeconds(columns[Headers["Duration"]]);
+            call.State = columns[Headers["State"]];
 
             if (call.CallType == "Inbound call")
             {
-                call.UserName = columns[Headers["Name"]];
                 call.UserExtention = columns[Headers["To"]];
-                call.Time = DateTime.Parse(columns[Headers["Time"]]);
-                call.Duration = (int)Math.Round(decimal.Parse(columns[Headers["Duration"]]));
-                call.State = columns[Headers["State"]];
                 call.Caller = columns[Headers["From"]];
-
-                // find or create rep
-                RepData rep = Reps.FirstOrDefault(r => r.Name == call.UserName);
-                if (rep == null)
-                {
-                    rep = new RepData
-                    {
-                        id = Reps.Count + 1,
-                        Name = call.UserName,
-                        Extention = call.UserExtention
-                    };
-                    Reps.Add(rep);
-                }
-
-                rep.AddCall(call);
             }
             else if (call.CallType == "Outbound call")
             {
-                call.UserName = columns[Headers["Name"]];
                 call.UserExtention = columns[Headers["From"]];
-                call.Time = DateTime.Parse(columns[Headers["Time"]]);
-                call.Duration = (int)Math.Round(decimal.Parse(columns[Headers["Duration"]]));
-                call.State = columns[Headers["State"]];
                 call.Caller = columns[Headers["To"]];
-
-                // find or create rep
-                RepData rep = Reps.FirstOrDefault(r => r.Name == call.UserName);
-                if (rep == null)
-                {
-                    rep = new RepData
-                    {
-                        id = Reps.Count + 1,
-                        Name = call.UserName,
-                        Extention = call.UserExtention
-                    };
-                    Reps.Add(rep);
-                }
-
-                rep.AddCall(call);
             }
+
+            // find or create rep
+            RepData rep = Reps.FirstOrDefault(r => r.Name == call.UserName);
+            if (rep == null)
+            {
+                rep = new RepData
+                {
+                    id = Reps.Count + 1,
+                    Name = call.UserName,
+                    Extention = call.UserExtention
+                };
+                Reps.Add(rep);
+            }
+
+            rep.AddCall(call);
         }
     }
 }

@@ -17,11 +17,14 @@ namespace CallMetrics.Controllers.Generators
         private Workbook workbook;
         private Worksheet worksheet;
 
+        public event EventHandler<int> ReportProgressChanged;
+
         public void Generate(List<RepData> reps, string directoryPath)
         {
             try
             {
                 var generator = new SupportRepMetrics();
+                generator.ProgressChanged += (s, e) => ReportProgressChanged?.Invoke(this, e);
 
                 excelApp = new Microsoft.Office.Interop.Excel.Application
                 {
@@ -34,15 +37,17 @@ namespace CallMetrics.Controllers.Generators
                 workbook = excelApp.Workbooks.Add(Type.Missing);
 
                 // remove reps that are on a team which is in the ignore metrics list
-                reps.RemoveAll(r => Settings.Teams.Any(t => t.Value.Contains(r.Name) && Settings.IgnoreTeamMetrics.Contains(t.Key)));
+                var reppies = reps;
+                reppies.RemoveAll(r => Settings.Teams.Any(t => t.Value.Contains(r.Name) && Settings.IgnoreTeamMetrics.Contains(t.Key)));
 
                 // create support metrics report worksheet
                 worksheet = (Worksheet)workbook.ActiveSheet;
-                worksheet = generator.Create(reps, worksheet);
+                worksheet = generator.Create(reppies, worksheet);
 
                 // save the workbook
                 workbook.SaveAs(directoryPath + fileName + ".xlsx");
                 workbook.Close(false);
+                ReportProgressChanged.Invoke(this, 100);
             }
             catch (Exception ex)
             {
@@ -55,6 +60,7 @@ namespace CallMetrics.Controllers.Generators
                 Marshal.ReleaseComObject(worksheet);
                 Marshal.ReleaseComObject(workbook);
                 Marshal.ReleaseComObject(excelApp);
+
             }            
         }
 
