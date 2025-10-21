@@ -15,5 +15,20 @@ namespace CallMetrics.Models
         {
             return $"{StartDate.ToShortDateString()} - {EndDate.ToShortDateString()}";
         }
+
+        internal int WorkDays()
+        {
+            // exclude weekends and known holidays
+            int workDays = 0;
+            for (DateTime date = StartDate; date <= EndDate; date = date.AddDays(1))
+            {
+                if (date.DayOfWeek != DayOfWeek.Saturday && date.DayOfWeek != DayOfWeek.Sunday)
+                {
+                    workDays++;
+                }
+            }
+
+            return workDays;
+        }
     }
 }

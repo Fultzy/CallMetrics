@@ -26,6 +26,7 @@ namespace CallMetrics.Controls
     {
         public event EventHandler DeleteTeamClicked;
         public string TeamName;
+        internal Action<object, object> RefreshRequest;
 
         public TeamControl()
         {
@@ -38,15 +39,37 @@ namespace CallMetrics.Controls
             TeamName = teamName;
             TeamNameLabel.Content = teamName;
 
-            if (Settings.IgnoreTeamMetrics.Contains(TeamName))
+            Team team = Settings.Teams.Where(t => t.Name == TeamName).FirstOrDefault();
+            if (team.Equals(default(SettingsData)))
+                return;
+
+            IncludeInMetricsCheckBox.IsChecked = team.IncludeInMetrics;
+
+            IsDepartmentCheckBox.IsChecked = team.IsDepartment;
+            if (team.IsDepartment)
             {
+                var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFA9A6A6"));
+                IncludeLabel.Foreground = brush;
+
                 IncludeInMetricsCheckBox.IsChecked = false;
+                IncludeInMetricsCheckBox.IsEnabled = false;
             }
-            else
+
+            HideTeamCheckBox.IsChecked = team.HideTeam;
+            if (team.HideTeam)
             {
-                IncludeInMetricsCheckBox.IsChecked = true;
+                var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFA9A6A6"));
+
+                IncludeLabel.Foreground = brush;
+                IncludeInMetricsCheckBox.IsChecked = false;
+                IncludeInMetricsCheckBox.IsEnabled = false;
+
+                DepartmentLabel.Foreground = brush;
+                IsDepartmentCheckBox.IsChecked = false;
+                IsDepartmentCheckBox.IsEnabled = false;
             }
-            
+
+
             RefreshTeamMembers();
 
         }
@@ -58,34 +81,136 @@ namespace CallMetrics.Controls
 
         public void RefreshTeamMembers()
         {
-            if (Settings.Teams[TeamName] != null)
+            Team team = Settings.Teams.Where(t => t.Name == TeamName).FirstOrDefault();
+            if (team.Equals(default(SettingsData)))
+                return;
+            
+            RepsWrapPanel.Children.Clear();
+            foreach (var member in team.Members) 
             {
-                RepsWrapPanel.Children.Clear();
-                foreach (var member in Settings.Teams[TeamName]) 
-                {
-                    var repItem = new RepItem(member);
-                    RepsWrapPanel.Children.Add(repItem);
-                }
+                var repItem = new RepItem(member);
+                RepsWrapPanel.Children.Add(repItem);
             }
         }
 
+        // Checkboxes
         public void IncludeInMetricsCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            if (Settings.IgnoreTeamMetrics.Contains(TeamName))
+            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            if (teamIndex >= 0)
             {
-                Settings.IgnoreTeamMetrics.Remove(TeamName);
+                var updatedTeam = Settings.Teams[teamIndex];
+                updatedTeam.IncludeInMetrics = true;
+                Settings.Teams[teamIndex] = updatedTeam;
+
                 Settings.Save();
             }
         }
 
         public void IncludeInMetricsCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            if (!Settings.IgnoreTeamMetrics.Contains(TeamName))
+            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            if (teamIndex >= 0)
             {
-                Settings.IgnoreTeamMetrics.Add(TeamName);
+                var updatedTeam = Settings.Teams[teamIndex];
+                updatedTeam.IncludeInMetrics = false;
+                Settings.Teams[teamIndex] = updatedTeam;
+
                 Settings.Save();
             }
         }
+
+        public void IsDepartmentCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+
+            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            if (teamIndex >= 0)
+            {
+                var updatedTeam = Settings.Teams[teamIndex];
+                updatedTeam.IsDepartment = true;
+                updatedTeam.IncludeInMetrics = false;
+                Settings.Teams[teamIndex] = updatedTeam;
+
+                var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFA9A6A6"));
+                IncludeLabel.Foreground = brush;
+
+                IncludeInMetricsCheckBox.IsChecked = false;
+                IncludeInMetricsCheckBox.IsEnabled = false;
+
+                Settings.Save();
+            }
+
+        }
+
+        public void IsDepartmentCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            if (teamIndex >= 0)
+            {
+                var updatedTeam = Settings.Teams[teamIndex];
+                updatedTeam.IsDepartment = false;
+                Settings.Teams[teamIndex] = updatedTeam;
+
+                // #FFFFFFFF
+                var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFFFFFFF"));
+                IncludeLabel.Foreground = brush;
+                IncludeInMetricsCheckBox.IsEnabled = true;
+
+                Settings.Save();
+            }
+        }
+
+        public void HideTeamCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            if (teamIndex >= 0)
+            {
+                var updatedTeam = Settings.Teams[teamIndex];
+                updatedTeam.HideTeam = true;
+                updatedTeam.IncludeInMetrics = false;
+                updatedTeam.IsDepartment = false;
+
+                Settings.Teams[teamIndex] = updatedTeam;
+                Settings.Save();
+
+                var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFA9A6A6"));
+
+                IncludeLabel.Foreground = brush;
+                IncludeInMetricsCheckBox.IsChecked = false;
+                IncludeInMetricsCheckBox.IsEnabled = false;
+
+                DepartmentLabel.Foreground = brush;
+                IsDepartmentCheckBox.IsChecked = false;
+                IsDepartmentCheckBox.IsEnabled = false;
+            }
+
+            RefreshRequest?.Invoke(this, e);
+        }
+
+        public void HideTeamCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            if (teamIndex >= 0)
+            {
+                var updatedTeam = Settings.Teams[teamIndex];
+                updatedTeam.HideTeam = false;
+                updatedTeam.IncludeInMetrics = false;
+                updatedTeam.IsDepartment = false;
+
+                Settings.Teams[teamIndex] = updatedTeam;
+                Settings.Save();
+
+                var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFFFFFFF"));
+
+                IncludeInMetricsCheckBox.IsEnabled = true;
+
+                IsDepartmentCheckBox.IsEnabled = true;
+            }
+
+            RefreshRequest?.Invoke(this, e);
+        }
+
+
 
         private void RepsWrapPanel_DragOver(object sender, DragEventArgs e)
         {
@@ -98,6 +223,10 @@ namespace CallMetrics.Controls
 
         private void RepsWrapPanel_Drop(object sender, DragEventArgs e)
         {
+            Team team = Settings.Teams.Where(t => t.Name == TeamName).FirstOrDefault();
+            if (team.IsNull())
+                return;
+
             if (e.Data.GetData(typeof(RepItem)) is RepItem item)
             {
                 if (item.Parent is ListBox parentBox)
@@ -112,12 +241,12 @@ namespace CallMetrics.Controls
                     this.RemoveLogicalChild(item);
                 }
 
-                foreach (var kvp in Settings.Teams.Where(k => k.Value.Contains(item.RepName)))
+                foreach (var tm in Settings.Teams.Where(t => t.Members.Contains(item.RepName)))
                 {
-                    kvp.Value.Remove(item.RepName);
+                    tm.Members.Remove(item.RepName);
                 }
 
-                Settings.Teams[TeamName].Add(item.RepName);
+                team.Members.Add(item.RepName);
                 Settings.Save();
 
                 var newItem = new RepItem(TeamName);

@@ -7,7 +7,7 @@ namespace CallMetrics.Utilities
         public static Notification GenerateComplete = new Notification
         {
             Title = "Report Generation Complete",
-            Message = "Your metrics report has been successfully generated!\nFind it on your Desktop!"
+            Message = $"Your metrics report has been successfully generated!\n Saved to {Settings.DefaultReportPath}"
         };
 
         public static Notification ImportComplete = new Notification
@@ -25,12 +25,25 @@ namespace CallMetrics.Utilities
         public static Notification NoTeams = new Notification
         {
             Title = "No Teams Created",
-            Message = "Report will be generated without Teams"
+            Message = "Create and Populate atleast one Team before Generating."
         };
+
+        public static Notification NoReps = new Notification
+        {
+            Title = "No Reps Assigned to Teams",
+            Message = "Import a Nextiva report and Assign Reps to Teams before Generating."
+        };
+
         public static Notification NoData = new Notification
         {
             Title = "No Data Imported",
             Message = "Import a Nextiva report before generating metrics."
+        };
+
+        public static Notification NoTeamInMetricsOrDepartments = new Notification
+        {
+            Title = "No Teams Included in Metrics",
+            Message = "Enable Include in Metrics or set a team to Department"
         };
     }
 

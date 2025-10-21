@@ -25,7 +25,6 @@ namespace CallMetrics
         public List<RepData> ImportResults = new();
         public NextivaReportReader ReportReader = new();
         public MetricsReport ReportGenerator = new();
-        public string OutputDirectory = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
 
         public MainWindow()
         {
@@ -48,6 +47,7 @@ namespace CallMetrics
         {
             // open explorer to select file
             var openFileDialog = new Microsoft.Win32.OpenFileDialog();
+            openFileDialog.DefaultDirectory = Settings.DefaultReportPath;
             openFileDialog.DefaultExt = ".csv";
             openFileDialog.Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*";
 
@@ -85,17 +85,30 @@ namespace CallMetrics
                 return;
             }
             
-            if (Settings.Teams.Count == 0)
-            {
-                Notify(Notifications.NoTeams);
-            }
+            //if (Settings.Teams.Count == 0)
+            //{
+            //    Notify(Notifications.NoTeams);
+            //    return;
+            //}
+
+            //if (!Settings.Teams.Any(t => t.Members.Count > 0))
+            //{
+            //    Notify(Notifications.NoReps);
+            //    return;
+            //}
+
+            //if (!Settings.Teams.Any(t => t.IncludeInMetrics || t.IsDepartment))
+            //{
+            //    Notify(Notifications.NoTeamInMetricsOrDepartments);
+            //    return;
+            //}
 
             GenerateButton.IsEnabled = false;
             ImportButton.IsEnabled = false;
             ClearButton.IsEnabled = false;
             Task task = Task.Run(() =>
             {
-                ReportGenerator.Generate(ImportResults, OutputDirectory);
+                ReportGenerator.Generate(ImportResults, Settings.DefaultReportPath);
             });
 
             await task;
@@ -133,6 +146,12 @@ namespace CallMetrics
         private void CloseButton_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
+        {
+            SettingsWindow settingsWindow = new SettingsWindow();
+            settingsWindow.ShowDialog();
         }
 
         private void MainWindow_SourceInitialized(object sender, EventArgs e)

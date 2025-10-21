@@ -7,7 +7,7 @@
         xmlns:controls="clr-namespace:CallMetrics.Controls"
         xmlns:l="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        Title="Assign reps to Teams" Height="650" Width="650" AllowDrop="True">
+        Title="Assign reps to Teams" Height="650" Width="750" AllowDrop="True">
     <Grid >
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" MinWidth="120" MaxWidth="250"/>
@@ -21,7 +21,6 @@
 
 
         <!-- Unassigned Reps -->
-
         <Label Content="Assign to Teams" FontSize="20" FontWeight="Bold" Foreground="White" Padding="10,0,0,0" VerticalAlignment="Top" Margin="10" HorizontalAlignment="Center" MouseLeftButtonDown="Window_MouseLeftButtonDown"/>
 
         <l:Card Background="#FF2D2D2D" Margin="10,50,5,10" AllowDrop="True" DragOver="FreeRepsWrapPanel_DragOver" Drop="FreeRepsWrapPanel_Drop" HorizontalAlignment="Stretch">
@@ -32,7 +31,12 @@
             </ScrollViewer>
         </l:Card> 
 
+        
         <!-- Teams DataGrid -->
+        <Button x:Name="HideButton" Grid.Column="1" Margin="0,7,270,0" Padding="10,5" HorizontalAlignment="right" VerticalAlignment="Top" Click="ShowHiddenButton_Click" Background="#FF585858" Foreground="White" BorderBrush="#FF828282">
+            <l:PackIcon Kind="Eye" Width="32" Height="24" Foreground="#FFAFAFAF"/>
+        </Button>
+        
         <Button Content="Add" Grid.Column="1" Margin="0,7,210,0" Padding="10,5" HorizontalAlignment="right" VerticalAlignment="Top" Click="AddNewTeam_Click" Background="#FF3686DA" Foreground="White"/>
 
         <Label x:Name="HintLabel" Content="New Team Name" Grid.Column="1" Margin="0,10,103,0" Padding="5" HorizontalAlignment="Right" VerticalAlignment="Top" FontStyle="Italic" Foreground="#FFB3B3B3" Background="Transparent"/>

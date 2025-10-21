@@ -3,9 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:CallMetrics" xmlns:l="http://materialdesigninxaml.net/winfx/xaml/themes" xmlns:controls="clr-namespace:CallMetrics.Controls"
-        mc:Ignorable="d"
+        xmlns:local="clr-namespace:CallMetrics" 
+        xmlns:l="http://materialdesigninxaml.net/winfx/xaml/themes" 
+        xmlns:controls="clr-namespace:CallMetrics.Controls"
         Style="{StaticResource MaterialDesignWindow}" AllowsTransparency="True"
+        mc:Ignorable="d"
         WindowStyle="None"
         Title="CallMetrics" Height="600" Width="1050" Background="Transparent">
     <Grid>
@@ -33,7 +35,14 @@
         </StackPanel>
 
         <StackPanel Orientation="Horizontal" Margin="0,5,7,0" Grid.Column="1">
-            <Button Margin="2" Content="X" Background="Red" FontSize="18" Padding="12,3,12,5" Click="CloseButton_Click" Foreground="White"/>
+            
+            <Button FontSize="18" Padding="0" Click="SettingsButton_Click" Foreground="White" Margin="0,0,10,0">
+                <l:PackIcon Kind="Gear" Width="32" Height="32"/>
+            </Button>
+
+            <Button Margin="2" Background="Red" FontSize="18" Padding="0" Click="CloseButton_Click" Foreground="White">
+                <l:PackIcon Kind="Close" Width="32" Height="32"/>
+            </Button>
         </StackPanel>
 
         <DataGrid x:Name="RepsDataGrid" Grid.Row="1" Margin="10,10,10,5" AutoGenerateColumns="True" IsReadOnly="True" Background="#FF2D2D2D" Foreground="#E5FFFFFF" Grid.ColumnSpan="2"/>

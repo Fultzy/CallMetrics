@@ -46,11 +46,7 @@ namespace CallMetrics.Controls
         {
             if (e.LeftButton == MouseButtonState.Pressed)
             {
-                //this.IsHitTestVisible = false; // <--- LET dragging pass through
-
                 DragDrop.DoDragDrop(this, this, DragDropEffects.Move);
-
-                //this.IsHitTestVisible = true; // <--- restore after
             }
         }
     }

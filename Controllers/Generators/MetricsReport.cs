@@ -36,17 +36,15 @@ namespace CallMetrics.Controllers.Generators
                 string fileName = @"\SupportMetrics_" + UniqueTimeCode();
                 workbook = excelApp.Workbooks.Add(Type.Missing);
 
-                // remove reps that are on a team which is in the ignore metrics list
-                var reppies = reps;
-                reppies.RemoveAll(r => Settings.Teams.Any(t => t.Value.Contains(r.Name) && Settings.IgnoreTeamMetrics.Contains(t.Key)));
-
                 // create support metrics report worksheet
                 worksheet = (Worksheet)workbook.ActiveSheet;
-                worksheet = generator.Create(reppies, worksheet);
+                worksheet = generator.Create(reps, worksheet);
 
                 // save the workbook
                 workbook.SaveAs(directoryPath + fileName + ".xlsx");
                 workbook.Close(false);
+                excelApp.Quit();
+
                 ReportProgressChanged.Invoke(this, 100);
             }
             catch (Exception ex)

@@ -18,8 +18,10 @@ namespace CallMetrics.Utilities
         // current running directory
         private static string Path = Directory.GetCurrentDirectory() + "/Settings.json";
 
-        public static List<string> IgnoreTeamMetrics = new(); // team names to ignore
-        public static Dictionary<string,List<string>> Teams = new(); // team name, list of rep names
+        public static string DefaultReportPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+        public static int RankedRepsCount = 10;
+        public static bool AutoOpenReport = false;
+        public static List<Team> Teams = new();
 
 
         public static void Load()
@@ -30,11 +32,13 @@ namespace CallMetrics.Utilities
                 {
                     var json = System.IO.File.ReadAllText(Path);
                     var data = JsonConvert.DeserializeObject<SettingsData>(json);
-                    if (data.IgnoreTeamMetrics.Count > 0 || data.Teams.Count > 0)
-                    {
-                        IgnoreTeamMetrics = data.IgnoreTeamMetrics ?? new List<string>();
-                        Teams = data.Teams ?? new Dictionary<string, List<string>>();
-                    }
+                    if (data.Equals(default(SettingsData)))
+                        return;
+
+                    Teams = data.Teams;
+                    RankedRepsCount = data.RankedRepsCount;
+                    AutoOpenReport = data.AutoOpenReport;
+                    DefaultReportPath = data.DefaultReportPath;
                 }
                 catch (Exception ex)
                 {
@@ -55,8 +59,10 @@ namespace CallMetrics.Utilities
             {
                 var data = new SettingsData
                 {
-                    IgnoreTeamMetrics = IgnoreTeamMetrics,
                     Teams = Teams,
+                    RankedRepsCount = RankedRepsCount,
+                    AutoOpenReport = AutoOpenReport,
+                    DefaultReportPath = DefaultReportPath
                 };
 
                 var json = JsonConvert.SerializeObject(data, Formatting.Indented);
@@ -71,11 +77,43 @@ namespace CallMetrics.Utilities
             }
         }
     }
+
+
+    [Serializable]
+    public struct SettingsData
+    {
+        public string DefaultReportPath;
+        public int RankedRepsCount;
+        public bool AutoOpenReport;
+        public List<Team> Teams;
+
+        public SettingsData()
+        {
+            DefaultReportPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+            RankedRepsCount = 10;
+            AutoOpenReport = false;
+            Teams = new List<Team>();
+        }
+    }
+
+
+    [Serializable]
+    public struct Team
+    {
+        public string Name;
+
+        public bool IncludeInMetrics;
+        public bool IsDepartment;
+        public bool HideTeam;
+
+        public List<string> Members;
+
+        public bool IsNull()
+        {
+            return this.Equals(default(Team));
+        }
+    }
+
+
 }
 
-[Serializable]
-public struct SettingsData
-{
-    public List<string> IgnoreTeamMetrics;
-    public Dictionary<string, List<string>> Teams;
-}

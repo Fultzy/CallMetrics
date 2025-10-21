@@ -6,7 +6,7 @@
              xmlns:local="clr-namespace:CallMetrics.Controls"
              xmlns:l="http://materialdesigninxaml.net/winfx/xaml/themes"
              mc:Ignorable="d" MaxWidth="300" Margin="0,-5,0,0">
-    <l:Card Background="#72454545" BorderThickness="1">
+    <l:Card Background="#72454545" BorderThickness="1" BorderBrush="#FF040404">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>

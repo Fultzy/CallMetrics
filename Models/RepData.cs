@@ -69,7 +69,7 @@ namespace CallMetrics.Models
             string[] name = Name.Split(' ');
             if (name.Length > 1)
             {
-                return name[0] + " " + name[1][0];
+                return name[0] + " " + name.Last()[0];
             }
             else
             {
@@ -85,7 +85,7 @@ namespace CallMetrics.Models
             if (averageTime < 1) Console.WriteLine("OPPS!");
             int averageTimeInSeconds = Convert.ToInt32(averageTime);
 
-            return FormatedDuration(averageTimeInSeconds);
+            return FormattedDuration(averageTimeInSeconds);
         }
 
         public int AdjustedCalls()
@@ -101,83 +101,29 @@ namespace CallMetrics.Models
 
         public string Over30Percentage()
         {
+            if (TotalCalls == 0) return "Divided by 0!";
             return ((float)CallsOver30 / (float)TotalCalls) * 100 + "%";
         }
 
         public float Over30PercentFloat()
         {
-            if (TotalCalls == 0) return 0; // prevent divide by zero error
+            if (TotalCalls == 0) return 0;
             return ((float)CallsOver30 / (float)TotalCalls) * 100;
         }
 
         public string Over60Percentage()
         {
+            if (TotalCalls == 0) return "Divided by 0!";
             return ((float)CallsOver60 / (float)TotalCalls) * 100 + "%";
         }
 
         public float Over60PercentFloat()
         {
-            if (TotalCalls == 0) return 0; // prevent divide by zero error
+            if (TotalCalls == 0) return 0;
             return ((float)CallsOver60 / (float)TotalCalls) * 100;
         }
 
-        public (double, double, double) OverSixtyMinutesCallsPercentages()
-        {
-            int overHourCalls = 0;
-            int overHourInboundCalls = 0;
-            int overHourOutboundCalls = 0;
-
-            foreach (CallData call in Calls)
-            {
-                if (call.Duration > 3600)
-                {
-                    overHourCalls++;
-                    if (call.CallType == "Inbound call")
-                    {
-                        overHourInboundCalls++;
-                    }
-                    else
-                    {
-                        overHourOutboundCalls++;
-                    }
-                }
-            }
-            return (
-                Math.Round((double)overHourCalls / (double)TotalCalls * 100, 2),
-                Math.Round((double)overHourInboundCalls / (double)InboundCalls * 100, 2),
-                Math.Round((double)overHourOutboundCalls / (double)OutboundCalls * 100, 2)
-                );
-        }
-
-        public (double, double, double) OverThirtyMinutesCallsPercentages()
-        {
-            int overThirtyMinuteCalls = 0;
-            int overThirtyMinuteInboundCalls = 0;
-            int overThirtyMinuteOutboundCalls = 0;
-
-            foreach (CallData call in Calls)
-            {
-                if (call.Duration > 1800)
-                {
-                    overThirtyMinuteCalls++;
-                    if (call.CallType == "Inbound call")
-                    {
-                        overThirtyMinuteInboundCalls++;
-                    }
-                    else
-                    {
-                        overThirtyMinuteOutboundCalls++;
-                    }
-                }
-            }
-            return (
-                Math.Round((double)overThirtyMinuteCalls / (double)TotalCalls * 100, 2),
-                Math.Round((double)overThirtyMinuteInboundCalls / (double)InboundCalls * 100, 2),
-                Math.Round((double)overThirtyMinuteOutboundCalls / (double)OutboundCalls * 100, 2)
-                );
-        }
-
-        public string FormatedDuration(int duration)
+        public string FormattedDuration(int duration)
         {
             TimeSpan time = TimeSpan.FromSeconds(duration);
             if (time.Hours == 0 && time.Days == 0)

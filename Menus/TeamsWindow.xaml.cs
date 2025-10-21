@@ -25,11 +25,13 @@ namespace CallMetrics.Menus
     {
         private List<RepData> _reps = new();
         private string _newTeamName = string.Empty;
+        private bool _showHiddenTeams = false;
 
         public TeamsWindow(List<RepData> importResults)
         {
             InitializeComponent();
             this.SourceInitialized += TeamsWindow_SourceInitialized;
+            this.Closed += (s,e) => Settings.Load();
 
             _reps = importResults;
             RefreshTeamsList();
@@ -39,7 +41,7 @@ namespace CallMetrics.Menus
         private void AddNewTeam_Click(object sender, RoutedEventArgs e)
         {
 
-            if (Settings.Teams.Any(t => t.Key.Equals(_newTeamName, StringComparison.OrdinalIgnoreCase)))
+            if (Settings.Teams.Any(t => t.Name.Equals(_newTeamName, StringComparison.OrdinalIgnoreCase)))
             {
                 MessageBox.Show("A team with this name already exists. Please choose a different name.", "Duplicate Team Name", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
@@ -51,7 +53,18 @@ namespace CallMetrics.Menus
                 return;
             }
 
-            Settings.Teams.Add(_newTeamName, new List<string>());
+            // Capitalize first letter of each word
+            _newTeamName = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(_newTeamName.ToLower());
+
+            Settings.Teams.Add(new Team
+            {
+                Name = _newTeamName,
+                Members = new List<string>(),
+                IncludeInMetrics = true,
+                IsDepartment = false,
+                HideTeam = false
+            });
+
             Settings.Save();
 
             NewTeamNameTextBox.Text = "";
@@ -60,9 +73,25 @@ namespace CallMetrics.Menus
             RefreshTeamsList();
         }
 
+        private void ShowHiddenButton_Click(object sender, RoutedEventArgs e)
+        {
+            _showHiddenTeams = !_showHiddenTeams;
+            if (_showHiddenTeams)
+            {
+                // #FF42C7FF
+                var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF42C7FF"));
+                HideButton.BorderBrush = brush;
+            }
+            else
+            {
+                var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FF828282"));
+                HideButton.BorderBrush = brush;
+            }
+            RefreshTeamsList();
+        }
+
         private void NewTeamNameTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            var textBox = sender as TextBox;
             _newTeamName = NewTeamNameTextBox.Text.Trim();
 
             if (_newTeamName.Length > 0)
@@ -79,36 +108,45 @@ namespace CallMetrics.Menus
         {
             var Teams = Settings.Teams;
 
-
-            if (Settings.Teams[teamName] != null && Settings.Teams[teamName].Count > 0)
+            var teamToDelete = Settings.Teams.FirstOrDefault(t => t.Name == teamName);
+            if (!teamToDelete.Equals(default(SettingsData)))
             {
-                var result = MessageBox.Show($"Are you sure you want to delete the team '{teamName}'?", "Confirm Deletion", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                
-                if (result == MessageBoxResult.Yes)
+                if (teamToDelete.Members.Count > 0)
                 {
-                    Settings.Teams.Remove(teamName);
+                    var result = MessageBox.Show($"Are you sure you want to delete the team '{teamName}'?", "Confirm Deletion", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        Settings.Teams.Remove(teamToDelete);
+                        Settings.Save();
+                        RefreshTeamsList();
+                    }
+                }
+                else
+                {
+                    Settings.Teams.Remove(teamToDelete);
                     Settings.Save();
                     RefreshTeamsList();
                 }
-            }
-            else if (Settings.Teams[teamName] != null && Settings.Teams[teamName].Count == 0)
-            {
-                Settings.Teams.Remove(teamName);
-                Settings.Save();
-                RefreshTeamsList();
             }
         }
 
         public void RefreshTeamsList()
         {
             TeamsListBox.Children.Clear();
+            Settings.Load();
 
-            foreach (var kvp in Settings.Teams)
+            var teamsCopy = Settings.Teams.ToList();
+
+            foreach (var team in teamsCopy)
             {
-                var teamControl = new Controls.TeamControl(kvp.Key);
+                if (team.HideTeam && !_showHiddenTeams)
+                    continue;
+
+                var teamControl = new Controls.TeamControl(team.Name);
 
                 teamControl.DeleteTeamClicked += (sender, e) => DeleteTeam(teamControl.TeamName);
-                
+                teamControl.RefreshRequest += (s, e) => RefreshTeamsList();
                 TeamsListBox.Children.Add(teamControl);
             }
         }
@@ -125,7 +163,7 @@ namespace CallMetrics.Menus
 
             foreach (var rep in _reps)
             {
-                if (!Settings.Teams.Any(t => t.Value.Contains(rep.Name)))
+                if (!Settings.Teams.Any(t => t.Members.Contains(rep.Name)))
                 {
                     var repItem = new Controls.RepItem(rep.Name);
                     LooseRepsPanel.Children.Add(repItem);
@@ -158,9 +196,9 @@ namespace CallMetrics.Menus
                     this.RemoveLogicalChild(item);
                 }
 
-                foreach (var kvp in Settings.Teams.Where(k => k.Value.Contains(item.RepName)))
+                foreach (var kvp in Settings.Teams.Where(k => k.Members.Contains(item.RepName)))
                 {
-                    kvp.Value.Remove(item.RepName);
+                    kvp.Members.Remove(item.RepName);
                 }
 
                 var newItem = new Controls.RepItem(item.RepName);

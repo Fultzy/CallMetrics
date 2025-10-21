@@ -19,10 +19,21 @@
             <Separator BorderBrush="#FF737373" BorderThickness="2" Grid.ColumnSpan="3" Margin="5,30,5,0" VerticalAlignment="top"/>
 
             <Label x:Name="TeamNameLabel" Grid.Column="0" Margin="5,1,5,0" Content="Team Name is longer than you think it should be" Foreground="White" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" AllowDrop="True"  DragOver="RepsWrapPanel_DragOver" Drop="RepsWrapPanel_Drop"/>
+            
+            <!-- Hide Team -->
+            <Label Content="Hide Team:" HorizontalAlignment="Right" VerticalAlignment="Top" Foreground="#FFA9A6A6" Grid.Column="1" Margin="0,15,25,0" Padding="0" AllowDrop="True"  DragOver="RepsWrapPanel_DragOver" Drop="RepsWrapPanel_Drop"/>
 
-            <Label Content="Include with Metrics:" HorizontalAlignment="Right" VerticalAlignment="Top" Foreground="White" Grid.Column="2" Margin="0,10,55,0" AllowDrop="True"  DragOver="RepsWrapPanel_DragOver" Drop="RepsWrapPanel_Drop"/>
+            <CheckBox x:Name="HideTeamCheckBox" Grid.Column="1" Margin="0,15,0,0" HorizontalAlignment="Right" VerticalAlignment="Top" IsChecked="False" Checked="HideTeamCheckBox_Checked" Unchecked="HideTeamCheckBox_Unchecked" Height="17" Width="29" Background="#FF4DE040" BorderBrush="#FF6836C1"/>
 
-            <CheckBox x:Name="IncludeInMetricsCheckBox" Grid.Column="2" Margin="0,13,31,0" HorizontalAlignment="Right" VerticalAlignment="Top" IsChecked="True" Checked="IncludeInMetricsCheckBox_Checked" Unchecked="IncludeInMetricsCheckBox_Unchecked" Height="17" Width="29" Background="#FF4DE040" BorderBrush="#FF6836C1"/>
+            <!-- Teams Table -->
+            <Label x:Name="IncludeLabel" Content="Include in Metrics:" HorizontalAlignment="Right" VerticalAlignment="Top" Foreground="White" Grid.Column="2" Margin="0,0,55,0" Padding="0" AllowDrop="True"  DragOver="RepsWrapPanel_DragOver" Drop="RepsWrapPanel_Drop"/>
+
+            <CheckBox x:Name="IncludeInMetricsCheckBox" Grid.Column="2" Margin="0,0,31,0" HorizontalAlignment="Right" VerticalAlignment="Top" IsChecked="True" Checked="IncludeInMetricsCheckBox_Checked" Unchecked="IncludeInMetricsCheckBox_Unchecked" Height="17" Width="29" Background="#FF4DE040" BorderBrush="#FF6836C1"/>
+
+            <!-- Departments Table -->
+            <Label x:Name="DepartmentLabel" Content="Department:" HorizontalAlignment="Right" VerticalAlignment="Top" Foreground="White" Grid.Column="2" Margin="0,15,55,0" Padding="0" AllowDrop="True"  DragOver="RepsWrapPanel_DragOver" Drop="RepsWrapPanel_Drop"/>
+
+            <CheckBox x:Name="IsDepartmentCheckBox" Grid.Column="2" Margin="0,15,31,0" HorizontalAlignment="Right" VerticalAlignment="Top" IsChecked="True" Checked="IsDepartmentCheckBox_Checked" Unchecked="IsDepartmentCheckBox_Unchecked" Height="17" Width="29" Background="#FF4DE040" BorderBrush="#FF6836C1"/>
 
             <Button x:Name="DeleteTeamButton" Content="X" Grid.Column="2" Margin="0,3,5,0" Padding="0" HorizontalAlignment="Right" FontSize="15" VerticalAlignment="Top" Width="26" Height="25" Click="DeleteTeamButton_Click"  Background="#FFFB2B2B" Foreground="White"/>
 
