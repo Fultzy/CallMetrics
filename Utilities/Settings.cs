@@ -32,8 +32,7 @@ namespace CallMetrics.Utilities
                 {
                     var json = System.IO.File.ReadAllText(Path);
                     var data = JsonConvert.DeserializeObject<SettingsData>(json);
-                    if (data.Equals(default(SettingsData)))
-                        return;
+                    
 
                     Teams = data.Teams;
                     RankedRepsCount = data.RankedRepsCount;
@@ -44,6 +43,16 @@ namespace CallMetrics.Utilities
                 {
                     MessageBox.Show("Error loading settings. Using defaults.\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
+            }
+            else
+            {
+                // no settings file, use defaults
+                Teams = new List<Team>();
+                RankedRepsCount = 10;
+                AutoOpenReport = false;
+                DefaultReportPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
+                Save();
             }
         }
 

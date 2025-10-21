@@ -29,7 +29,9 @@ namespace CallMetrics
         public MainWindow()
         {
             InitializeComponent();
+            
             Settings.Load();
+
             this.SourceInitialized += MainWindow_SourceInitialized;
             ReportGenerator.ReportProgressChanged += (s, e) => UpdateProgressBar(e);
             ProgressBar.Value = 0;
