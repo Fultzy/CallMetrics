@@ -264,7 +264,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
         private Worksheet AddGeneralTableMetrics(List<RepData> reps, Worksheet worksheet, int row)
         {
             // sort then add total then average rep to the front
-            reps = reps.OrderByDescending(u => u.Name).ToList();
+            reps = reps.OrderBy(u => u.Name).ToList();
             var repInt= reps.Count;
 
             var totalUser = CreateTotalUser(reps);
