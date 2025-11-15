@@ -46,6 +46,17 @@ namespace CallMetrics.Controllers.Generators
                 excelApp.Quit();
 
                 ReportProgressChanged.Invoke(this, 100);
+
+                if (Settings.AutoOpenReport)
+                {
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
+                    {
+                        FileName = directoryPath + fileName + ".xlsx",
+                        UseShellExecute = true,
+                        Verb = "open"
+                    });
+                }
+
             }
             catch (Exception ex)
             {
