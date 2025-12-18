@@ -25,7 +25,10 @@ namespace CallMetrics.Models
 
         public bool IsInternal()
         {
-            return Caller.Length == UserExtention.Length;
+            if (Caller.Length == UserExtention.Length)
+                return true;
+            else
+                return false;
         }
     }
 }
