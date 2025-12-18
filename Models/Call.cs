@@ -6,16 +6,15 @@ using System.Threading.Tasks;
 
 namespace CallMetrics.Models
 {
-    public class CallData
+    public class Call
     {
-        public int id = 0;
         public int PhoneNumberID { get; set; }
         public int UserID { get; set; }
 
 
         public string CallType { get; set; }
         public int Duration { get; set; }
-        public DateTime Time { get; set; }
+        public DateTime DateTime { get; set; }
         public string State { get; set; }
 
 
@@ -24,21 +23,9 @@ namespace CallMetrics.Models
         public string TransferUser { get; set; }
         public string Caller { get; set; }
 
-
-        public bool IsWeekend()
-        {
-            if (Time.DayOfWeek == DayOfWeek.Saturday || Time.DayOfWeek == DayOfWeek.Sunday)
-                return true;
-            else
-                return false;
-        }
-
         public bool IsInternal()
         {
-            if (Caller.Length == UserExtention.Length || Caller == "16308690873")
-                return true;
-            else
-                return false;
+            return Caller.Length == UserExtention.Length;
         }
     }
 }

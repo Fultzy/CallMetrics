@@ -15,14 +15,15 @@ using System.Drawing;
 using System.Windows.Media;
 using CallMetrics.Controllers.Readers.Nextiva;
 using System.Reflection.Metadata.Ecma335;
+using CallMetrics.Data;
 
 namespace CallMetrics.Controllers.Generators.WorkSheets
 {
 
     public class SupportRepMetrics
     {
-        public RepData AverageRep = null;
-        public RepData TotalRep = null;
+        public Rep AverageRep = null;
+        public Rep TotalRep = null;
 
         public Dictionary<string, int> TicketsFormulaSourceRows = new();
         public int rankCount = Settings.RankedRepsCount;
@@ -32,7 +33,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
         public event EventHandler<int> ProgressChanged;
 
-        public Worksheet Create(List<RepData> importReps, Worksheet worksheet)
+        public Worksheet Create(List<Rep> importReps, Worksheet worksheet)
         {
             ///////////////////////////////////////////////////////////////
             // This method will create the Support Metric Report Worksheet.
@@ -71,10 +72,10 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             percentageStep = CalculateProgressSteps(reps.Count + departments.Count, rankCount);
 
             DateRange dateRange = new DateRange();
-            dateRange.StartDate = reps.Min(r => r.Calls.Min(c => c.Time));
-            dateRange.EndDate = reps.Max(r => r.Calls.Max(c => c.Time));
+            dateRange.StartDate = MetricsData.Calls.Min(c => c.DateTime);
+            dateRange.EndDate = MetricsData.Calls.Max(c => c.DateTime);
 
-            /////////////////////////////////////////// Begin Data Entry
+            /////////////////////////////////////////// Begin MetricsData Entry
             // Setup top row
             worksheet.Range["A1", "T1"].Font.Size = 14;
             worksheet.Range["A1", "T1"].Interior.Color = XlRgbColor.rgbLightSteelBlue;
@@ -140,7 +141,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
         
 
         ///////// FIRST TABLE
-        private Worksheet AddDepartmentHeader(List<RepData> reps, Worksheet worksheet, int row)
+        private Worksheet AddDepartmentHeader(List<Rep> reps, Worksheet worksheet, int row)
         {
             // First header row on worksheet
             worksheet.Cells[row - 1, 1] = "Departments";
@@ -157,8 +158,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             worksheet.Cells[row, 7] = "Internal Calls";
             worksheet.Cells[row, 8] = "Adj Calls";
             worksheet.Cells[row, 9] = "Calls/Tickets";
-            worksheet.Cells[row, 10] = "Avg Call Time";
-            worksheet.Cells[row, 11] = "Total Ph Time";
+            worksheet.Cells[row, 10] = "Avg Call DateTime";
+            worksheet.Cells[row, 11] = "Total Ph DateTime";
             worksheet.Cells[row, 12] = "Calls > 30m";
             worksheet.Cells[row, 13] = "> 30%";
             worksheet.Cells[row, 14] = "Calls > 1h";
@@ -182,7 +183,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             return worksheet;
         }
 
-        private Worksheet AddDepartmentMetrics(List<RepData> departments, Worksheet worksheet, int row)
+        private Worksheet AddDepartmentMetrics(List<Rep> departments, Worksheet worksheet, int row)
         {
             // sort departments by total calls descending
             departments = departments.OrderByDescending(u => u.TotalCalls).ToList();
@@ -213,7 +214,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
         private Worksheet AddGeneralTableHeader(Worksheet worksheet, int row)
         {
             // First header row on worksheet
-            worksheet.Cells[row - 1, 1] = "Reps";
+            worksheet.Cells[row - 1, 1] = "Calls";
             worksheet.Cells[row - 1, 1].Font.Bold = true;
             worksheet.Cells[row - 1, 1].Font.Size = 14;
             worksheet.Cells[row - 1, 1].Interior.Color = XlRgbColor.rgbLightSteelBlue;
@@ -227,8 +228,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             worksheet.Cells[row, 7] = "Internal Calls";
             worksheet.Cells[row, 8] = "Adj Calls";
             worksheet.Cells[row, 9] = "Calls/Tickets";
-            worksheet.Cells[row, 10] = "Avg Call Time";
-            worksheet.Cells[row, 11] = "Total Ph Time";
+            worksheet.Cells[row, 10] = "Avg Call DateTime";
+            worksheet.Cells[row, 11] = "Total Ph DateTime";
             worksheet.Cells[row, 12] = "Calls > 30m";
             worksheet.Cells[row, 13] = "> 30%";
             worksheet.Cells[row, 14] = "Calls > 1h";
@@ -261,7 +262,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             return worksheet;
         }
 
-        private Worksheet AddGeneralTableMetrics(List<RepData> reps, Worksheet worksheet, int row)
+        private Worksheet AddGeneralTableMetrics(List<Rep> reps, Worksheet worksheet, int row)
         {
             // sort then add total then average rep to the front
             reps = reps.OrderBy(u => u.Name).ToList();
@@ -318,7 +319,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
 
 
-        private Worksheet AddUserMetrics(RepData rep, Worksheet worksheet, int row)
+        private Worksheet AddUserMetrics(Rep rep, Worksheet worksheet, int row)
         {
             if (rep == null)
                 return worksheet;
@@ -399,8 +400,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             worksheet.Cells[row, 2] = "Adj Tickets";
             worksheet.Cells[row, 4] = "Adj Calls";
             worksheet.Cells[row, 6] = "Calls/Ticket";
-            worksheet.Cells[row, 8] = "Avg Call Time";
-            worksheet.Cells[row, 10] = "Total Ph Time";
+            worksheet.Cells[row, 8] = "Avg Call DateTime";
+            worksheet.Cells[row, 10] = "Total Ph DateTime";
             worksheet.Cells[row, 12] = " > 30m %";
             worksheet.Cells[row, 14] = " > 1h %";
             worksheet.Cells[row, 16] = "Tickets/Day";
@@ -431,7 +432,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             return worksheet;
         }
 
-        private Worksheet AddAverageLineupMetrics(List<RepData> reps, Worksheet worksheet, int row, out int newRow)
+        private Worksheet AddAverageLineupMetrics(List<Rep> reps, Worksheet worksheet, int row, out int newRow)
         {
             // this table is going to display data in columns. each column will be a different metric and
             // will be sorted vertically by the metric with that genReps name to the left. 
@@ -442,12 +443,12 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             var genCount = reps.Count;
 
             // setup sorted lists for each metric, adjusted calls, average call time, total phone time, calls over 30, calls over 30 %, calls over 60, calls over 60 %
-            List<RepData> adjCalls = reps.OrderByDescending(u => u.AdjustedCalls()).ToList();
-            List<RepData> avgCallTime = reps.OrderBy(u => u.AverageDuration()).ToList();
-            List<RepData> totalPhoneTime = reps.OrderByDescending(u => u.TotalDuration).ToList();
+            List<Rep> adjCalls = reps.OrderByDescending(u => u.AdjustedCalls()).ToList();
+            List<Rep> avgCallTime = reps.OrderBy(u => u.AverageDuration()).ToList();
+            List<Rep> totalPhoneTime = reps.OrderByDescending(u => u.TotalDuration).ToList();
 
-            List<RepData> callsOver30Percent = reps.OrderBy(u => u.Over30PercentFloat()).ToList();
-            List<RepData> callsOver60Percent = reps.OrderBy(u => u.Over60PercentFloat()).ToList();
+            List<Rep> callsOver30Percent = reps.OrderBy(u => u.Over30PercentFloat()).ToList();
+            List<Rep> callsOver60Percent = reps.OrderBy(u => u.Over60PercentFloat()).ToList();
 
             int rank = 0;
             int startRow = row - reps.Count - 4;
@@ -456,7 +457,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
             worksheet.Cells[row + rank, 2].Formula2 = $"=INDEX(SORTBY(A{startRow}:A{endRow}, D{startRow}:D{endRow}, -1), SEQUENCE({rankCount},1,1,1))";
             worksheet.Cells[row + rank, 6].Formula2 = $"=INDEX(SORTBY(A{startRow}:A{endRow}, I{startRow}:I{endRow}, 1), SEQUENCE({rankCount},1,1,1))";
-            foreach (RepData rep in reps.Take(rankCount))
+            foreach (Rep rep in reps.Take(rankCount))
             {
 
                 // Value =LARGE(D9:D23, 10)
@@ -472,7 +473,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
 
             rank = 0;
-            foreach (RepData user in adjCalls.Take(rankCount))
+            foreach (Rep user in adjCalls.Take(rankCount))
             {
                 if (user.Name == "-- AVERAGE --") worksheet.Range["D" + (row + rank), "E" + (row + rank)].Font.Bold = true;
 
@@ -484,7 +485,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             }
 
             rank = 0;
-            foreach (RepData user in avgCallTime.Take(rankCount))
+            foreach (Rep user in avgCallTime.Take(rankCount))
             {
                 if (user.Name == "-- AVERAGE --") worksheet.Range["H" + (row + rank), "I" + (row + rank)].Font.Bold = true;
 
@@ -495,7 +496,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             }
 
             rank = 0;
-            foreach (RepData user in totalPhoneTime.Take(rankCount))
+            foreach (Rep user in totalPhoneTime.Take(rankCount))
             {
                 if (user.Name == "-- AVERAGE --") worksheet.Range["J" + (row + rank), "K" + (row + rank)].Font.Bold = true;
 
@@ -506,7 +507,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             }
 
             rank = 0;
-            foreach (RepData user in callsOver30Percent.Take(rankCount))
+            foreach (Rep user in callsOver30Percent.Take(rankCount))
             {
                 if (user.Name == "-- AVERAGE --") worksheet.Range["L" + (row + rank), "M" + (row + rank)].Font.Bold = true;
 
@@ -517,7 +518,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             }
 
             rank = 0;
-            foreach (RepData user in callsOver60Percent.Take(rankCount))
+            foreach (Rep user in callsOver60Percent.Take(rankCount))
             {
                 if (user.Name == "-- AVERAGE --") worksheet.Range["N" + (row + rank), "O" + (row + rank)].Font.Bold = true;
 
@@ -529,7 +530,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
             rank = 0;
             worksheet.Cells[row + rank, 16].Formula2 = $"=INDEX(SORTBY(A{startRow}:A{endRow}, Q{startRow}:Q{endRow}, -1), SEQUENCE({rankCount},1,1,1))";
-            foreach (RepData user in reps.Take(rankCount))
+            foreach (Rep user in reps.Take(rankCount))
             {
                 // Tickets/Day
                 // NAME =INDEX(SORTBY(A9:A28, Q9:Q28, -1), SEQUENCE(20,1,1,1))
@@ -543,7 +544,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
             rank = 0;
             worksheet.Cells[row + rank, 18].Formula2 = $"=INDEX(SORTBY(A{startRow}:A{endRow}, R{startRow}:R{endRow}, -1), SEQUENCE({rankCount},1,1,1))";
-            foreach (RepData user in reps.Take(rankCount))
+            foreach (Rep user in reps.Take(rankCount))
             {
                 // Calls/Day
                 //worksheet.Cells[row + rank, 18].Formula =
@@ -600,8 +601,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             worksheet.Cells[row, 7] = "Internal Calls";
             worksheet.Cells[row, 8] = "Adj Calls";
             worksheet.Cells[row, 9] = "Calls/Tickets";
-            worksheet.Cells[row, 10] = "Avg Call Time";
-            worksheet.Cells[row, 11] = "Total Ph Time";
+            worksheet.Cells[row, 10] = "Avg Call DateTime";
+            worksheet.Cells[row, 11] = "Total Ph DateTime";
             worksheet.Cells[row, 12] = "Calls > 30m";
             worksheet.Cells[row, 13] = "> 30%";
             worksheet.Cells[row, 14] = "Calls > 1h";
@@ -634,7 +635,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             return worksheet;
         }
 
-        private Worksheet AddEachTeamsMetrics(List<RepData> reps, Worksheet worksheet, int row)
+        private Worksheet AddEachTeamsMetrics(List<Rep> reps, Worksheet worksheet, int row)
         {
             foreach (var team in Settings.Teams)
             {
@@ -661,13 +662,13 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
                 var aRow = tRow + 1;
 
                 // get the genReps for this team
-                List<RepData> teamReps = new();
+                List<Rep> teamReps = new();
                 foreach (var repName in team.Members)
                 {
                     var rep = reps.FirstOrDefault(r => r.Name == repName);
                     if (rep != null)
                     {
-                        if (rep.Calls.Count > 0)
+                        if (rep.TotalCalls > 0)
                             teamReps.Add(rep);
                     }
                 }
@@ -724,9 +725,9 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
 
         ///////// formatting and helpers
-        private RepData CreateTotalUser(List<RepData> reps)
+        private Rep CreateTotalUser(List<Rep> reps)
         {
-            RepData totalUser = new RepData();
+            Rep totalUser = new Rep();
 
             // add all the call records to the total rep
             totalUser.Name = "-- TOTAL --";
@@ -761,15 +762,12 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
                 inboundPhoneTime += rep.InboundDuration;
                 outboundPhoneTime += rep.OutboundDuration;
 
+                // add calls over 30 and 60 minutes
+                callsOver30 += rep.CallsOver30;
+                callsOver60 += rep.CallsOver60;
+
                 InternalCalls += rep.InternalCalls;
                 WeekendCalls += rep.WeekendCalls;
-
-
-                foreach (var call in rep.Calls)
-                {
-                    if (call.Duration > 1800) callsOver30++;
-                    if (call.Duration > 3600) callsOver60++;
-                }
             }
 
             // set the Total rep metrics
@@ -791,10 +789,10 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             return totalUser;
         }
 
-        private RepData CreateAverageUser(List<RepData> reps)
+        private Rep CreateAverageUser(List<Rep> reps)
         {
             // create new rep
-            RepData avgUser = new RepData();
+            Rep avgUser = new Rep();
             avgUser.Name = "-- AVERAGE --";
 
             // get the average metrics
@@ -822,7 +820,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
                 if (user.Name == "-- AVERAGE --") continue; // skip the average rep
 
                 // add total calls
-                totalCalls += user.Calls.Count;
+                totalCalls += user.TotalCalls;
                 weekendCalls += user.WeekendCalls;
                 internalCalls += user.InternalCalls;
                 adjustedCalls += user.AdjustedCalls();

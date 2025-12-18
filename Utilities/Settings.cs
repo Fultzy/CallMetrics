@@ -21,6 +21,8 @@ namespace CallMetrics.Utilities
         public static string DefaultReportPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
         public static int RankedRepsCount = 10;
         public static bool AutoOpenReport = false;
+        public static ImportType TicketImportType = ImportType.CallTracker;
+        public static ImportType CallImportType = ImportType.Nextiva;
         public static List<Team> Teams = new();
 
 
@@ -38,6 +40,8 @@ namespace CallMetrics.Utilities
                     RankedRepsCount = data.RankedRepsCount;
                     AutoOpenReport = data.AutoOpenReport;
                     DefaultReportPath = data.DefaultReportPath;
+                    CallImportType = data.CallImportType;
+                    TicketImportType = data.TicketImportType;
                 }
                 catch (Exception ex)
                 {
@@ -71,7 +75,9 @@ namespace CallMetrics.Utilities
                     Teams = Teams,
                     RankedRepsCount = RankedRepsCount,
                     AutoOpenReport = AutoOpenReport,
-                    DefaultReportPath = DefaultReportPath
+                    DefaultReportPath = DefaultReportPath,
+                    CallImportType = CallImportType,
+                    TicketImportType = TicketImportType,
                 };
 
                 var json = JsonConvert.SerializeObject(data, Formatting.Indented);
@@ -94,6 +100,8 @@ namespace CallMetrics.Utilities
         public string DefaultReportPath;
         public int RankedRepsCount;
         public bool AutoOpenReport;
+        public ImportType TicketImportType;
+        public ImportType CallImportType;
         public List<Team> Teams;
 
         public SettingsData()
@@ -101,8 +109,18 @@ namespace CallMetrics.Utilities
             DefaultReportPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
             RankedRepsCount = 10;
             AutoOpenReport = false;
+            TicketImportType = ImportType.CallTracker;
+            CallImportType = ImportType.Nextiva;
             Teams = new List<Team>();
         }
+    }
+
+    public enum ImportType
+    {
+        CallTracker,
+        Dynamics,
+        Nextiva,
+        Five9,
     }
 
 

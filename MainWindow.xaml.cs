@@ -1,5 +1,9 @@
 ﻿using CallMetrics.Controllers.Generators;
+using CallMetrics.Controllers.Readers.CallTracker;
+using CallMetrics.Controllers.Readers.Dynamics;
+using CallMetrics.Controllers.Readers.Five9;
 using CallMetrics.Controllers.Readers.Nextiva;
+using CallMetrics.Data;
 using CallMetrics.Menus;
 using CallMetrics.Models;
 using CallMetrics.Utilities;
@@ -14,6 +18,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using static MaterialDesignThemes.Wpf.Theme;
 
 namespace CallMetrics
 {
@@ -22,8 +27,6 @@ namespace CallMetrics
     /// </summary>
     public partial class MainWindow : Window
     {
-        public List<RepData> ImportResults = new();
-        public NextivaReportReader ReportReader = new();
         public MetricsReport ReportGenerator = new();
 
         public MainWindow()
@@ -35,6 +38,12 @@ namespace CallMetrics
             this.SourceInitialized += MainWindow_SourceInitialized;
             ReportGenerator.ReportProgressChanged += (s, e) => UpdateProgressBar(e);
             ProgressBar.Value = 0;
+
+            // set toggles based on settings
+            TicketImportTypeToggle.IsChecked = Settings.TicketImportType == ImportType.Dynamics;
+            CallImportTypeToggle.IsChecked = Settings.CallImportType == ImportType.Five9;
+            CheckTicketImportType();
+            CheckCallImportType();
         }
 
         public void UpdateProgressBar(int value)
@@ -45,77 +54,119 @@ namespace CallMetrics
             });
         }
 
-        private void ImportNextivaReport_Click(object sender, RoutedEventArgs e)
+        private async void ImportCallReport_Click(object sender, RoutedEventArgs e)
         {
-            // open explorer to select file
-            var openFileDialog = new Microsoft.Win32.OpenFileDialog();
-            openFileDialog.DefaultDirectory = Settings.DefaultReportPath;
-            openFileDialog.DefaultExt = ".csv";
-            openFileDialog.Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*";
-
-            var result = openFileDialog.ShowDialog();
-            if (result == true)
+            try
             {
                 ClearButton.IsEnabled = false;
-                ImportButton.IsEnabled = false;
+                ImportTicketsButton.IsEnabled = false;
+                ImportCallsButton.IsEnabled = false;
                 GenerateButton.IsEnabled = false;
 
-                var filePath = openFileDialog.FileName;
-                ImportResults = ReportReader.Read(filePath);
-                if (ImportResults.Count == 0)
+                if (Settings.CallImportType == ImportType.Nextiva)
+                {
+                    MetricsData.AddCalls(await new NextivaReader().Start());
+                }
+                else if (Settings.CallImportType == ImportType.Five9)
+                {
+                    MetricsData.AddCalls(await new Five9Reader().Start());
+                }
+
+                if (MetricsData.Calls.Count == 0)
                 {
                     Notify(Notifications.ImportFail);
                     return;
                 }
 
-                RepsDataGrid.ItemsSource = ImportResults;
+                RepsDataGrid.ItemsSource = MetricsData.Reps;
                 RepsDataGrid.Items.Refresh();
 
+                Notify(Notifications.ImportCallsComplete);
+            }
+            finally
+            {
                 ClearButton.IsEnabled = true;
-                ImportButton.IsEnabled = true;
+                ImportTicketsButton.IsEnabled = true;
+                ImportCallsButton.IsEnabled = true;
                 GenerateButton.IsEnabled = true;
-
-                Notify(Notifications.ImportComplete);
             }
         }
 
+        private async void ImportTicketReport_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                ClearButton.IsEnabled = false;
+                ImportTicketsButton.IsEnabled = false;
+                ImportCallsButton.IsEnabled = false;
+                GenerateButton.IsEnabled = false;
+
+
+                if (Settings.TicketImportType == ImportType.Dynamics)
+                {
+                    MetricsData.AddTickets(await new DynamicsReader().Start());
+                }
+                else if (Settings.TicketImportType == ImportType.CallTracker)
+                {
+                    MetricsData.AddTickets(await new CallTrackerReader().Start());
+                }
+
+                if (MetricsData.Tickets.Count == 0)
+                {
+                    Notify(Notifications.ImportFail);
+                    return;
+                }
+
+                RepsDataGrid.ItemsSource = MetricsData.Reps;
+                RepsDataGrid.Items.Refresh();
+
+                Notify(Notifications.ImportTicketsComplete);
+            }
+            finally
+            {
+                ClearButton.IsEnabled = true;
+                ImportTicketsButton.IsEnabled = true;
+                ImportCallsButton.IsEnabled = true;
+                GenerateButton.IsEnabled = true;
+
+            }
+        }
+
+
         private async void GenerateReport_Click(object sender, RoutedEventArgs e)
         {
-            if (ImportResults.Count == 0)
+            if (MetricsData.Calls.Count == 0)
             {
-                Notify(Notifications.NoData);
+                Notify(Notifications.NoCalls);
                 return;
             }
-            
-            //if (Settings.Teams.Count == 0)
+
+            // temp removed to allow use of only call data
+            //if (MetricsData.Tickets.Count == 0)
             //{
-            //    Notify(Notifications.NoTeams);
+            //    Notify(Notifications.NoTickets);
             //    return;
             //}
 
-            //if (!Settings.Teams.Any(t => t.Members.Count > 0))
-            //{
-            //    Notify(Notifications.NoReps);
-            //    return;
-            //}
-
-            //if (!Settings.Teams.Any(t => t.IncludeInMetrics || t.IsDepartment))
-            //{
-            //    Notify(Notifications.NoTeamInMetricsOrDepartments);
-            //    return;
-            //}
+            if (MetricsData.Reps.Count == 0)
+            {
+                Notify(Notifications.NoReps);
+                return;
+            }
 
             GenerateButton.IsEnabled = false;
-            ImportButton.IsEnabled = false;
+            ImportTicketsButton.IsEnabled = false;
+            ImportCallsButton.IsEnabled = false;
             ClearButton.IsEnabled = false;
             Task task = Task.Run(() =>
             {
-                ReportGenerator.Generate(ImportResults, Settings.DefaultReportPath);
+                ReportGenerator.Generate(MetricsData.Reps, Settings.DefaultReportPath);
             });
 
             await task;
             ClearButton.IsEnabled = true;
-            ImportButton.IsEnabled = true;
+            ImportTicketsButton.IsEnabled = true;
+            ImportCallsButton.IsEnabled = true;
             GenerateButton.IsEnabled = true;
             Notify(Notifications.GenerateComplete);
             ProgressBar.Value = 0;
@@ -129,13 +180,13 @@ namespace CallMetrics
 
         private void SetRepsToTeams_Click(object sender, RoutedEventArgs e)
         {
-            TeamsWindow teamsWindow = new TeamsWindow(ImportResults);
+            TeamsWindow teamsWindow = new TeamsWindow(MetricsData.Reps);
             teamsWindow.ShowDialog();
         }
 
         private void ClearData_Click(object sender, RoutedEventArgs e)
         {
-            ImportResults.Clear();
+            MetricsData.Clear();
             RepsDataGrid.ItemsSource = null;
             RepsDataGrid.Items.Refresh();
         }
@@ -154,6 +205,62 @@ namespace CallMetrics
         {
             SettingsWindow settingsWindow = new SettingsWindow();
             settingsWindow.ShowDialog();
+        }
+
+        private void TicketImportTypeToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckTicketImportType();
+            Settings.Save();
+        }
+
+        private void TicketImportTypeToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckTicketImportType();
+            Settings.Save();
+        }
+
+        private void CheckTicketImportType()
+        {
+            if (TicketImportTypeToggle.IsChecked == false)
+            {
+                Settings.TicketImportType = ImportType.CallTracker;
+                ImportTicketsButton.Content = "Import CallTracker Tickets";
+                ImportTicketsButton.Background = new SolidColorBrush(Color.FromRgb(33, 150, 243));
+            }
+            else
+            {
+                Settings.TicketImportType = ImportType.Dynamics;
+                ImportTicketsButton.Content = "Import Dynamics Tickets";
+                ImportTicketsButton.Background = new SolidColorBrush(Color.FromRgb(10, 109, 187));
+            }
+        }
+
+        private void CallImportTypeToggle_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckCallImportType();
+            Settings.Save();
+        }
+
+        private void CallImportTypeToggle_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckCallImportType();
+            Settings.Save();
+        }
+
+        public void CheckCallImportType()
+        {
+            if (CallImportTypeToggle.IsChecked == false)
+            {
+                Settings.CallImportType = ImportType.Nextiva;
+                ImportCallsButton.Content = "Import Nextiva Calls";
+                ImportCallsButton.Background = new SolidColorBrush(Color.FromRgb(33, 150, 243));
+            }
+            else
+            {
+                Settings.CallImportType = ImportType.Five9;
+                ImportCallsButton.Content = "Import Five9 Calls";
+                ImportCallsButton.Background = new SolidColorBrush(Color.FromRgb(10, 109, 187));
+            }
         }
 
         private void MainWindow_SourceInitialized(object sender, EventArgs e)

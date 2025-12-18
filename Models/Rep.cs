@@ -1,15 +1,21 @@
 ﻿
+
+
 namespace CallMetrics.Models
 {
     
-    public class RepData
+    public class Rep
     {
-        public List<CallData> Calls = new();
-
-        public int id = 0;
         public string Name { get; set; } = "None";
-        public string Extention { get; set; } = "None";
+        public string Extension { get; set; } = "None";
 
+        // Tickets
+        public int TotalTickets { get; set; } = 0;
+        public int WeekendTickets { get; set; } = 0;
+        
+
+
+        // Calls
         public int TotalCalls { get; set; } = 0;
         public int TotalDuration { get; set; } = 0;
 
@@ -24,41 +30,6 @@ namespace CallMetrics.Models
 
         public int WeekendCalls { get; set; } = 0;
         public int InternalCalls { get; set; } = 0;
-
-
-        public void AddCalls(List<CallData> newCalls)
-        {
-            foreach (CallData call in newCalls)
-            {
-                AddCall(call);
-            }
-        }
-
-        public void AddCall(CallData newCall)
-        {
-            TotalCalls++;
-            TotalDuration += newCall.Duration;
-
-            if (newCall.Duration > 1800) CallsOver30++;
-            if (newCall.Duration > 3600) CallsOver60++;
-
-            if (newCall.IsWeekend() && newCall.IsInternal() == false) WeekendCalls++;
-            if (newCall.IsInternal()) InternalCalls++;
-
-
-            if (newCall.CallType == "Inbound call")
-            {
-                InboundCalls++;
-                InboundDuration += newCall.Duration;
-            }
-            else
-            {
-                OutboundCalls++;
-                OutboundDuration += newCall.Duration;
-            }
-
-            Calls.Add(newCall);
-        }
 
         public string LastInitial()
         {
@@ -95,7 +66,7 @@ namespace CallMetrics.Models
 
         public float AverageDuration()
         {
-            if (TotalCalls == 0) return 0; // prevent divide by zero error
+            if (TotalCalls == 0) return 0; 
             return TotalDuration / TotalCalls;
         }
 

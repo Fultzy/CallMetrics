@@ -1,4 +1,5 @@
 ﻿using CallMetrics.Models;
+using CallMetrics.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Configuration;
@@ -10,16 +11,34 @@ using System.Windows;
 
 namespace CallMetrics.Controllers.Readers.Nextiva
 {
-    public class NextivaReportReader
+    public class NextivaReader
     {
-        private List<RepData> Reps = new();
+        private List<Call> Calls = new();
         private Dictionary<string,int> Headers = new();
 
-        public List<RepData> Read(string filePath)
+        internal async Task<List<Call>> Start()
+        {
+            // open explorer to select file
+            var openFileDialog = new Microsoft.Win32.OpenFileDialog();
+            openFileDialog.DefaultDirectory = Settings.DefaultReportPath;
+            openFileDialog.DefaultExt = ".csv";
+            openFileDialog.Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*";
+
+            var result = openFileDialog.ShowDialog();
+            if (result == true)
+            {
+                string filePath = openFileDialog.FileName;
+                return await Task.Run(() => Read(filePath));
+            }
+
+            return new List<Call>();
+        }
+
+        public List<Call> Read(string filePath)
         {
             try
             {
-                Reps = new List<RepData>();
+                Calls = new List<Call>(); 
                 string[] lines = File.ReadAllLines(filePath);
 
                 // first line is the header
@@ -45,12 +64,8 @@ namespace CallMetrics.Controllers.Readers.Nextiva
             {
                 MessageBox.Show("Error reading file: " + ex.Message + "\n Try closing the damn file, huh?", "idk bro, good luck.. ", MessageBoxButton.YesNoCancel, MessageBoxImage.Error);
             }
-            finally
-            {
-                // idk man. just felt like it i guess.
-            }
 
-            return Reps;
+            return Calls;
         }
 
         private string[] ParseCsvLine(string line)
@@ -79,14 +94,14 @@ namespace CallMetrics.Controllers.Readers.Nextiva
         }
 
 
-//Call Type	Transfer User	Name	Time	Duration	Direction	Answered	State	From	To	Internal	External
+//Call Type	Transfer User	Name	DateTime	Duration	Direction	Answered	State	From	To	Internal	External
         public void ParseCallRow(string[] columns)
         {
-            CallData call = new();
+            Call call = new();
 
             call.CallType = columns[Headers["Call Type"]];
             call.UserName = NextivaHelper.GetName(Headers, columns);
-            call.Time = DateTime.Parse(columns[Headers["Time"]]);
+            call.DateTime = DateTime.Parse(columns[Headers["DateTime"]]);
             call.Duration = NextivaHelper.GetDurationInSeconds(columns[Headers["Duration"]]);
             call.State = columns[Headers["State"]];
 
@@ -101,20 +116,9 @@ namespace CallMetrics.Controllers.Readers.Nextiva
                 call.Caller = columns[Headers["To"]];
             }
 
-            // find or create rep
-            RepData rep = Reps.FirstOrDefault(r => r.Name == call.UserName);
-            if (rep == null)
-            {
-                rep = new RepData
-                {
-                    id = Reps.Count + 1,
-                    Name = call.UserName,
-                    Extention = call.UserExtention
-                };
-                Reps.Add(rep);
-            }
-
-            rep.AddCall(call);
+            Calls.Add(call);
         }
+
+
     }
 }

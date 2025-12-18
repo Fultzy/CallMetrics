@@ -8,13 +8,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace CallMetrics.Menus
 {
@@ -23,11 +19,11 @@ namespace CallMetrics.Menus
     /// </summary>  
     public partial class TeamsWindow : Window
     {
-        private List<RepData> _reps = new();
+        private List<Rep> _reps = new();
         private string _newTeamName = string.Empty;
         private bool _showHiddenTeams = false;
 
-        public TeamsWindow(List<RepData> importResults)
+        public TeamsWindow(List<Rep> importResults)
         {
             InitializeComponent();
             this.SourceInitialized += TeamsWindow_SourceInitialized;
@@ -165,6 +161,9 @@ namespace CallMetrics.Menus
             {
                 if (!Settings.Teams.Any(t => t.Members.Contains(rep.Name)))
                 {
+                    // fixed a bug that included average user after report generation
+                    if (rep.Name == "-- AVERAGE --") continue;
+
                     var repItem = new Controls.RepItem(rep.Name);
                     LooseRepsPanel.Children.Add(repItem);
                 }

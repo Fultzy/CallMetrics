@@ -10,12 +10,12 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 {
     internal class SupportMetricsHelper
     {
-        public List<RepData> GetAllReps(List<Team> teams)
+        public List<Rep> GetAllReps(List<Team> teams)
         {
-            List<RepData> allReps = new();
+            List<Rep> allReps = new();
             foreach (var team in teams)
             {
-                allReps.AddRange((IEnumerable<RepData>)team.Members);
+                allReps.AddRange((IEnumerable<Rep>)team.Members);
             }
             return allReps;
 

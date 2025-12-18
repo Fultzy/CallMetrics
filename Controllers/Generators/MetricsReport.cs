@@ -19,7 +19,7 @@ namespace CallMetrics.Controllers.Generators
 
         public event EventHandler<int> ReportProgressChanged;
 
-        public void Generate(List<RepData> reps, string directoryPath)
+        public void Generate(List<Rep> reps, string directoryPath)
         {
             try
             {

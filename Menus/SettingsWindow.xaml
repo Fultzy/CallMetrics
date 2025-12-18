@@ -60,7 +60,7 @@
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
-                            
+
                             <Label Content="Number of Rows to Generate Metric Rankings for:" FontSize="16"  Foreground="White" Padding="10,5,0,5" VerticalAlignment="Center" Margin="5" HorizontalAlignment="Left" Grid.Column="0"/>
 
                             <Button x:Name="DecreaseRowsButton" Content="-" FontSize="16" Padding="5" Margin="10,5,0,5" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Column="1" Width="30" Click="DecreaseRowsButton_Click"/>
@@ -71,39 +71,6 @@
 
                         </Grid>
                     </l:Card>
-                    
-                    <!--
-                    <l:Card Background="#FF525252" Margin="0,5,0,0">
-                        <Grid>
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" MinWidth="300"/>
-                                <ColumnDefinition Width="Auto"/>
-                            </Grid.ColumnDefinitions>
-                            
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
-                            
-                            <Label Content="Holidays / Days off:" FontSize="16"  Foreground="White" Padding="10,5,0,5" VerticalAlignment="Center" Margin="5" HorizontalAlignment="Left" Grid.Column="0"/>
-
-                            <ListBox x:Name="DaysOffListBox" FontSize="14" Foreground="White" Padding="10,5,0,5" VerticalAlignment="Stretch" Margin="10,5,10,5" HorizontalAlignment="Stretch" Grid.Row="1" Background="#4C101010" Height="100">
-                                <ListBoxItem Content="01 / 01 - New Year's Day"/>
-                                <ListBoxItem Content="07 / 04 - Independence Day"/>
-                                <ListBoxItem Content="12 / 25 - Christmas Day"/>
-                            </ListBox>
-
-                            <Button x:Name="AddDayOffButton" Content="Add" FontSize="14" Padding="5" Margin="0,5,10,5" VerticalAlignment="Top" HorizontalAlignment="Right" Grid.Row="0" Grid.Column="1" Width="60" Click="AddDayOffButton_Click"/>
-
-                            <TextBox x:Name="NewDayOffTextBox" Text="MM / DD - Holiday Name" FontSize="14" Foreground="#FFB3B3B3" Padding="5" VerticalAlignment="Top" Margin="0,5,80,5" HorizontalAlignment="Right" Grid.Row="0" Grid.Column="1" Width="200" Background="#4C101010" TextAlignment="Center" GotFocus="NewDayOffTextBox_GotFocus" LostFocus="NewDayOffTextBox_LostFocus"/>
-
-                            <Calendar x:Name="DayOffCalendar" Grid.Row="1" Grid.Column="1" Margin="0,5,10,5" VerticalAlignment="Top" HorizontalAlignment="Stretch" SelectionMode="SingleDate" DisplayMode="Month" SelectedDatesChanged="DayOffCalendar_SelectedDatesChanged"/>
-
-                        </Grid>
-
-                    </l:Card>
-                    -->
-                
                 </StackPanel>
             </ScrollViewer>
         </l:Card>

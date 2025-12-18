@@ -10,16 +10,22 @@ namespace CallMetrics.Utilities
             Message = $"Your metrics report has been successfully generated!\n Saved to {Settings.DefaultReportPath}"
         };
 
-        public static Notification ImportComplete = new Notification
+        public static Notification ImportCallsComplete = new Notification
         {
             Title = "Import Complete",
-            Message = "The Nextiva report has been successfully imported!"
+            Message = "The Call report has been successfully imported!"
+        };
+
+        public static Notification ImportTicketsComplete = new Notification
+        {
+            Title = "Import Complete",
+            Message = "The Ticket report has been successfully imported!"
         };
 
         public static Notification ImportFail = new Notification
         {
             Title = "Import Failed",
-            Message = "Failed to import the Nextiva report.\nEnsure the file is a valid CSV and not open in another program."
+            Message = "Failed to import.\nEnsure the file is a valid and not open in another program."
         };
 
         public static Notification NoTeams = new Notification
@@ -28,16 +34,34 @@ namespace CallMetrics.Utilities
             Message = "Create and Populate atleast one Team before Generating."
         };
 
+        public static Notification NoRepsAssignedToTeams = new Notification
+        {
+            Title = "No Reps Assigned to Teams",
+            Message = "Import a report and Assign Reps to Teams before Generating."
+        };
+
         public static Notification NoReps = new Notification
         {
             Title = "No Reps Assigned to Teams",
-            Message = "Import a Nextiva report and Assign Reps to Teams before Generating."
+            Message = "Import a report and Assign Reps to Teams before Generating."
+        };
+
+        public static Notification NoCalls = new Notification
+        {
+            Title = "No Calls Imported",
+            Message = "Import a report before generating metrics."
+        };
+
+        public static Notification NoTickets = new Notification
+        {
+            Title = "No Tickets Imported",
+            Message = "Import a report before generating metrics."
         };
 
         public static Notification NoData = new Notification
         {
-            Title = "No Data Imported",
-            Message = "Import a Nextiva report before generating metrics."
+            Title = "No MetricsData Imported",
+            Message = "Import a report before generating metrics."
         };
 
         public static Notification NoTeamInMetricsOrDepartments = new Notification

@@ -9,7 +9,7 @@
         Style="{StaticResource MaterialDesignWindow}" AllowsTransparency="True"
         mc:Ignorable="d"
         WindowStyle="None"
-        Title="CallMetrics" Height="600" Width="1050" Background="Transparent">
+        Title="CallMetrics" Height="600" Width="1150" Background="Transparent">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
@@ -28,7 +28,33 @@
         <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="0" Grid.ColumnSpan="2">
             <Image Source="pack://application:,,,/Icon/CallMetrics_Logo.png" Height="32" Width="32" Margin="10,0,0,0" VerticalAlignment="Center" MouseDown="Window_MouseLeftButtonDown"/>
             <Label Content="CallMetrics" FontSize="20" FontWeight="Bold" Foreground="White" Padding="10,0,0,0" VerticalAlignment="Center" MouseDown="Window_MouseLeftButtonDown"/>
-            <Button x:Name="ImportButton" Content="Import Nextiva Report" Margin="20,0,0,0" Padding="10,5" Click="ImportNextivaReport_Click" Foreground="White"/>
+            
+            <!-- Call Report Import -->
+            <ToggleButton x:Name="CallImportTypeToggle" Margin="30,0,0,0" Padding="10,5" Checked="CallImportTypeToggle_Checked" Unchecked="CallImportTypeToggle_Unchecked" Foreground="White" RenderTransformOrigin="0.5,0.5">
+                <ToggleButton.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform/>
+                        <SkewTransform/>
+                        <RotateTransform Angle="89.9"/>
+                        <TranslateTransform/>
+                    </TransformGroup>
+                </ToggleButton.RenderTransform>
+            </ToggleButton>
+            <Button x:Name="ImportCallsButton" Content="Import Nextiva Report" Margin="0,0,0,0" Padding="10,5" Click="ImportCallReport_Click" Foreground="White"/>
+
+            <!-- ticket Report Import -->
+            <ToggleButton x:Name="TicketImportTypeToggle" Visibility="Collapsed" Margin="10,0,0,0" Padding="10,5"  Checked="TicketImportTypeToggle_Checked" Unchecked="TicketImportTypeToggle_Unchecked" Foreground="White" RenderTransformOrigin="0.5,0.5" Background="#FF2196F3">
+                <ToggleButton.RenderTransform>
+                    <TransformGroup>
+                        <ScaleTransform/>
+                        <SkewTransform/>
+                        <RotateTransform Angle="89.9"/>
+                        <TranslateTransform/>
+                    </TransformGroup>
+                </ToggleButton.RenderTransform>
+            </ToggleButton>
+            <Button x:Name="ImportTicketsButton" Visibility="Collapsed" Content="Import CallTracker Report" Margin="0,0,0,0" Padding="10,5" Click="ImportTicketReport_Click" Foreground="White"/>
+
             <Button x:Name="GenerateButton" Content="Generate Report" Margin="20,0,0,0" Padding="10,5" Click="GenerateReport_Click" Foreground="White"/>
             <Button Content="Set Reps to Teams" Margin="20,0,0,0" Padding="10,5" Click="SetRepsToTeams_Click" Foreground="White"/>
             <Button x:Name="ClearButton" Content="Clear Data" Margin="20,0,0,0" Padding="10,5" Click="ClearData_Click" Foreground="White"/>
