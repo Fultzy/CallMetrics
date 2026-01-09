@@ -63,20 +63,24 @@ namespace CallMetrics
                 ImportCallsButton.IsEnabled = false;
                 GenerateButton.IsEnabled = false;
 
+                var calls = new List<Call>();
                 if (Settings.CallImportType == ImportType.Nextiva)
                 {
-                    MetricsData.AddCalls(await new NextivaReader().Start());
+                    calls = await new NextivaReader().Start();
                 }
                 else if (Settings.CallImportType == ImportType.Five9)
                 {
-                    MetricsData.AddCalls(await new Five9Reader().Start());
+                    calls = await new Five9Reader().Start();
                 }
 
+                MetricsData.AddCalls(calls);
                 if (MetricsData.Calls.Count == 0)
                 {
                     Notify(Notifications.ImportFail);
                     return;
                 }
+
+                
 
                 RepsDataGrid.ItemsSource = MetricsData.Reps;
                 RepsDataGrid.Items.Refresh();
@@ -101,21 +105,23 @@ namespace CallMetrics
                 ImportCallsButton.IsEnabled = false;
                 GenerateButton.IsEnabled = false;
 
-
+                var tickets = new List<Ticket>();
                 if (Settings.TicketImportType == ImportType.Dynamics)
                 {
-                    MetricsData.AddTickets(await new DynamicsReader().Start());
+                    tickets = await new DynamicsReader().Start();
                 }
                 else if (Settings.TicketImportType == ImportType.CallTracker)
                 {
-                    MetricsData.AddTickets(await new CallTrackerReader().Start());
+                    tickets = await new CallTrackerReader().Start();
                 }
 
+                MetricsData.AddTickets(tickets);
                 if (MetricsData.Tickets.Count == 0)
                 {
                     Notify(Notifications.ImportFail);
                     return;
                 }
+
 
                 RepsDataGrid.ItemsSource = MetricsData.Reps;
                 RepsDataGrid.Items.Refresh();
@@ -182,6 +188,12 @@ namespace CallMetrics
         {
             TeamsWindow teamsWindow = new TeamsWindow(MetricsData.Reps);
             teamsWindow.ShowDialog();
+        }
+
+        private void SetRepAliases_Click(object sender, RoutedEventArgs e)
+        {
+            AliasWindow aliasWindow = new AliasWindow(MetricsData.Reps);
+            aliasWindow.ShowDialog();
         }
 
         private void ClearData_Click(object sender, RoutedEventArgs e)

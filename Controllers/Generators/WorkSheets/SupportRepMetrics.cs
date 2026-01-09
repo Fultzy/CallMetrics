@@ -158,8 +158,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             worksheet.Cells[row, 7] = "Internal Calls";
             worksheet.Cells[row, 8] = "Adj Calls";
             worksheet.Cells[row, 9] = "Calls/Tickets";
-            worksheet.Cells[row, 10] = "Avg Call DateTime";
-            worksheet.Cells[row, 11] = "Total Ph DateTime";
+            worksheet.Cells[row, 10] = "Avg Call Time";
+            worksheet.Cells[row, 11] = "Total Ph Time";
             worksheet.Cells[row, 12] = "Calls > 30m";
             worksheet.Cells[row, 13] = "> 30%";
             worksheet.Cells[row, 14] = "Calls > 1h";
@@ -228,8 +228,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             worksheet.Cells[row, 7] = "Internal Calls";
             worksheet.Cells[row, 8] = "Adj Calls";
             worksheet.Cells[row, 9] = "Calls/Tickets";
-            worksheet.Cells[row, 10] = "Avg Call DateTime";
-            worksheet.Cells[row, 11] = "Total Ph DateTime";
+            worksheet.Cells[row, 10] = "Avg Call Time";
+            worksheet.Cells[row, 11] = "Total Ph Time";
             worksheet.Cells[row, 12] = "Calls > 30m";
             worksheet.Cells[row, 13] = "> 30%";
             worksheet.Cells[row, 14] = "Calls > 1h";
@@ -332,6 +332,12 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             else
                 worksheet.Cells[row, 1] = rep.LastInitial();
 
+            if (rep.Name != "-- TOTAL --" && rep.Name != "-- AVERAGE --")
+            {
+                worksheet.Cells[row, 2] = rep.TotalTickets;
+                worksheet.Cells[row, 3] = rep.WeekendTickets;
+            }
+
             worksheet.Cells[row, 5] = rep.TotalCalls;
             worksheet.Cells[row, 6] = rep.WeekendCalls;
             worksheet.Cells[row, 7] = rep.InternalCalls;
@@ -400,8 +406,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             worksheet.Cells[row, 2] = "Adj Tickets";
             worksheet.Cells[row, 4] = "Adj Calls";
             worksheet.Cells[row, 6] = "Calls/Ticket";
-            worksheet.Cells[row, 8] = "Avg Call DateTime";
-            worksheet.Cells[row, 10] = "Total Ph DateTime";
+            worksheet.Cells[row, 8] = "Avg Call Time";
+            worksheet.Cells[row, 10] = "Total Ph Time";
             worksheet.Cells[row, 12] = " > 30m %";
             worksheet.Cells[row, 14] = " > 1h %";
             worksheet.Cells[row, 16] = "Tickets/Day";
@@ -601,8 +607,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             worksheet.Cells[row, 7] = "Internal Calls";
             worksheet.Cells[row, 8] = "Adj Calls";
             worksheet.Cells[row, 9] = "Calls/Tickets";
-            worksheet.Cells[row, 10] = "Avg Call DateTime";
-            worksheet.Cells[row, 11] = "Total Ph DateTime";
+            worksheet.Cells[row, 10] = "Avg Call Time";
+            worksheet.Cells[row, 11] = "Total Ph Time";
             worksheet.Cells[row, 12] = "Calls > 30m";
             worksheet.Cells[row, 13] = "> 30%";
             worksheet.Cells[row, 14] = "Calls > 1h";

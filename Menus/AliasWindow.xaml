@@ -1,0 +1,67 @@
+﻿<Window x:Class="CallMetrics.Menus.AliasWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:CallMetrics.Menus"
+        xmlns:controls="clr-namespace:CallMetrics.Controls"
+        xmlns:l="http://materialdesigninxaml.net/winfx/xaml/themes"
+        mc:Ignorable="d" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        Title="Assign reps to Teams" Height="650" Width="780" AllowDrop="True">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" MinWidth="120" MaxWidth="250"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="auto"/>
+        </Grid.ColumnDefinitions>
+
+        <Border Grid.ColumnSpan="3" Background="#FF373737" Opacity="0.95" BorderThickness="0.5" BorderBrush="Black" CornerRadius="4"/>
+
+        <l:Card Grid.ColumnSpan="3" Grid.RowSpan="3" MouseLeftButtonDown="Window_MouseLeftButtonDown" Margin="1"/>
+
+        <Label Content="Manage Aliases" FontSize="20" FontWeight="Bold" Foreground="White" Padding="30,0,0,0" VerticalAlignment="Top" Margin="10" HorizontalAlignment="Left" MouseLeftButtonDown="Window_MouseLeftButtonDown"/>
+
+        <l:Card Background="#FF2D2D2D" Margin="10,50,5,10" AllowDrop="True" DragOver="FreeRepsWrapPanel_DragOver" Drop="FreeRepsWrapPanel_Drop" HorizontalAlignment="Stretch">
+            <Grid>
+                <Label Content="Non-Matching Names" FontSize="14" FontWeight="Bold" Foreground="White" Padding="10,5,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,25,0,0" >
+                    <StackPanel x:Name="LooseRepsPanel" Grid.Column="0" AllowDrop="True" DragOver="FreeRepsWrapPanel_DragOver" Drop="FreeRepsWrapPanel_Drop"  UseLayoutRounding="False">
+
+                    </StackPanel>
+                </ScrollViewer>
+                
+            </Grid>
+        </l:Card>
+
+
+        <l:Card Grid.Column="1" Background="#FF2D2D2D" Margin="10,50,10,10" HorizontalAlignment="Stretch">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <WrapPanel x:Name="AliasesPanel">
+
+
+                    <controls:AliasItem/>
+                    <controls:AliasItem/>
+                    <controls:AliasItem/>
+                    <controls:AliasItem/>
+                    <controls:AliasItem/>
+                    
+                </WrapPanel>
+            </ScrollViewer>
+        </l:Card>
+
+        <Button x:Name="HideButton" Grid.Column="1" Margin="0,7,315,0" Padding="10,5" HorizontalAlignment="right" VerticalAlignment="Top" Click="ShowHiddenButton_Click" Background="#FF585858" Foreground="White" BorderBrush="#FF828282">
+            <l:PackIcon Kind="Eye" Width="32" Height="24" Foreground="#FFAFAFAF"/>
+        </Button>
+
+        <Button Content="Add" Grid.Column="1" Margin="0,7,255,0" Padding="10,5" HorizontalAlignment="right" VerticalAlignment="Top" Click="NewAliasButton_Click" Background="#FF3686DA" Foreground="White"/>
+
+        <Label x:Name="HintLabel" Content="New Alias" Grid.Column="1" Margin="0,10,188,0" Padding="5" HorizontalAlignment="Right" VerticalAlignment="Top" FontStyle="Italic" Foreground="#FFB3B3B3" Background="Transparent"/>
+
+        <TextBox x:Name="NewAliasTextBox" Grid.Column="1" Margin="0,7,50,0" Padding="5" HorizontalAlignment="Right" Height="32" VerticalAlignment="Top" Width="200" TextChanged="NewAliasTextBox_TextChanged" Background="#4C101010" Foreground="White" KeyDown="NewAliasTextBox_KeyDown"/>
+
+        <StackPanel Orientation="Horizontal" Margin="0,5,5,0" Grid.Column="1" VerticalAlignment="Top" HorizontalAlignment="Right" >
+            
+            <Button Margin="2" Content="X" Background="Red" FontSize="18" Padding="12,3,12,5" Click="CloseButton_Click" Foreground="White"/>
+        </StackPanel>
+    </Grid>
+</Window>

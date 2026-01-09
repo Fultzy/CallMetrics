@@ -36,6 +36,9 @@ namespace CallMetrics.Controllers.Generators
                 string fileName = @"\SupportMetrics_" + UniqueTimeCode();
                 workbook = excelApp.Workbooks.Add(Type.Missing);
 
+                // remove reps with no calls and tickets
+                reps = reps.Where(r => r.TotalCalls > 0 && r.TotalTickets > 0).ToList();
+
                 // create support metrics report worksheet
                 worksheet = (Worksheet)workbook.ActiveSheet;
                 worksheet = generator.Create(reps, worksheet);

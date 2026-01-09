@@ -249,7 +249,7 @@ namespace CallMetrics.Controls
                 team.Members.Add(item.RepName);
                 Settings.Save();
 
-                var newItem = new RepItem(TeamName);
+                var newItem = new RepItem(item.RepName);
                 (sender as ListBox)?.Items.Add(newItem);
             }
 

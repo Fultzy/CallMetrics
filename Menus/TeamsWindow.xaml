@@ -27,6 +27,8 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel x:Name="LooseRepsPanel" Grid.Column="0" AllowDrop="True" DragOver="FreeRepsWrapPanel_DragOver" Drop="FreeRepsWrapPanel_Drop" MaxWidth="240" UseLayoutRounding="False">
                     <controls:RepWarningCard/>
+                    <controls:RepItem/>
+
                 </StackPanel>
             </ScrollViewer>
         </l:Card> 

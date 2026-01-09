@@ -24,6 +24,7 @@ namespace CallMetrics.Utilities
         public static ImportType TicketImportType = ImportType.CallTracker;
         public static ImportType CallImportType = ImportType.Nextiva;
         public static List<Team> Teams = new();
+        public static List<Alias> Aliases = new();
 
 
         public static void Load()
@@ -42,6 +43,7 @@ namespace CallMetrics.Utilities
                     DefaultReportPath = data.DefaultReportPath;
                     CallImportType = data.CallImportType;
                     TicketImportType = data.TicketImportType;
+                    Aliases = data.Aliases;
                 }
                 catch (Exception ex)
                 {
@@ -78,6 +80,7 @@ namespace CallMetrics.Utilities
                     DefaultReportPath = DefaultReportPath,
                     CallImportType = CallImportType,
                     TicketImportType = TicketImportType,
+                    Aliases = Aliases
                 };
 
                 var json = JsonConvert.SerializeObject(data, Formatting.Indented);
@@ -103,6 +106,7 @@ namespace CallMetrics.Utilities
         public ImportType TicketImportType;
         public ImportType CallImportType;
         public List<Team> Teams;
+        public List<Alias> Aliases;
 
         public SettingsData()
         {
@@ -112,6 +116,7 @@ namespace CallMetrics.Utilities
             TicketImportType = ImportType.CallTracker;
             CallImportType = ImportType.Nextiva;
             Teams = new List<Team>();
+            Aliases = new List<Alias>();
         }
     }
 
@@ -121,6 +126,7 @@ namespace CallMetrics.Utilities
         Dynamics,
         Nextiva,
         Five9,
+        None,
     }
 
 
@@ -138,6 +144,27 @@ namespace CallMetrics.Utilities
         public bool IsNull()
         {
             return this.Equals(default(Team));
+        }
+    }
+
+    [Serializable]
+    public struct Alias
+    {
+        public string Name;
+        public List<string> AliasedTo;
+        public ImportType AddedFrom;
+
+        public bool IsNull()
+        {
+            var n = string.IsNullOrEmpty(Name);
+            var a = AliasedTo == null || AliasedTo.Count == 0;
+
+            return n && a;
+        }
+
+        public override string ToString()
+        {
+            return string.Join(", ", AliasedTo);
         }
     }
 

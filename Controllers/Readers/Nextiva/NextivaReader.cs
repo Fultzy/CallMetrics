@@ -16,6 +16,18 @@ namespace CallMetrics.Controllers.Readers.Nextiva
         private List<Call> Calls = new();
         private Dictionary<string,int> Headers = new();
 
+        //private Dictionary<string, int> HeaderIndices = new();
+        //public string[] RequiredHeaders =
+        //[
+        //    "CALL TYPE",
+        //    "AGENT NAME",
+        //    "ANI", // callers number
+        //    "TALK TIME",
+        //    "DATE",
+        //    "TIME",
+        //    "SKILL",
+        //];
+
         internal async Task<List<Call>> Start()
         {
             // open explorer to select file
@@ -101,7 +113,7 @@ namespace CallMetrics.Controllers.Readers.Nextiva
 
             call.CallType = columns[Headers["Call Type"]];
             call.UserName = NextivaHelper.GetName(Headers, columns);
-            call.DateTime = DateTime.Parse(columns[Headers["DateTime"]]);
+            call.DateTime = DateTime.Parse(columns[Headers["Time"]]);
             call.Duration = NextivaHelper.GetDurationInSeconds(columns[Headers["Duration"]]);
             call.State = columns[Headers["State"]];
 

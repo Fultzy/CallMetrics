@@ -1,4 +1,5 @@
 ﻿using CallMetrics.Models;
+using CallMetrics.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,6 +23,32 @@ namespace CallMetrics.Data
             return true;
         }
 
+
+        private static Alias GetAliasForRepName(string repName)
+        {
+            foreach (var alias in Settings.Aliases)
+            {
+                if (alias.AliasedTo.Any(name => name == repName))
+                {
+                    return alias;
+                }
+            }
+            return new Alias();
+        }
+
+        private static Alias CreateAliasForRepName(string repName)
+        {
+            var newAlias = new Alias
+            {
+                Name = repName,
+                AliasedTo = new List<string> { repName }
+            };
+
+            Settings.Aliases.Add(newAlias);
+            Settings.Save();
+            return newAlias;
+        }
+
         public static void AddCalls(List<Call> newCalls)
         {
             foreach (var call in newCalls)
@@ -43,9 +70,15 @@ namespace CallMetrics.Data
             }
             else
             {
+                var alias = GetAliasForRepName(newCall.UserName);
+                if (alias.IsNull()) // only create alias from Call Records. 
+                {
+                    alias = CreateAliasForRepName(newCall.UserName);
+                }
+
                 var rep = new Rep
                 {
-                    Name = newCall.UserName,
+                    Name = alias.Name,
                     Extension = newCall.UserExtention?.Trim() ?? "None"
                 };
 
@@ -53,7 +86,7 @@ namespace CallMetrics.Data
                 Reps.Add(rep);  
             }
 
-                Calls.Add(newCall);
+            Calls.Add(newCall);
             return true;
         }
 
@@ -70,20 +103,44 @@ namespace CallMetrics.Data
             if (newTicket == null) return false;
             if (Tickets.Any(t => t.CallRecNumber == newTicket.CallRecNumber)) return false;
 
-            if (Reps.Any(r => r.Name == newTicket.ClientName))
+            var repNameFromTicket = newTicket.TicketEntries.First().AssignedToName;
+
+            // Try direct match first
+            var rep = Reps.FirstOrDefault(r => r.Name == repNameFromTicket);
+            if (rep != null)
             {
-                var rep = Reps.First(r => r.Name == newTicket.ClientName);
                 UpdateRepTicketMetrics(rep, newTicket);
             }
             else
             {
-                var rep = new Rep
+                // Try to resolve via alias mapping
+                var alias = GetAliasForRepName(repNameFromTicket);
+                if (alias.IsNull())
                 {
-                    Name = newTicket.ClientName,
-                    Extension = "None"
-                };
-                UpdateRepTicketMetrics(rep, newTicket);
-                Reps.Add(rep);
+                    // No alias and no existing rep -> cannot resolve assignment
+                    return false;
+                }
+
+                var canonicalName = alias.Name;
+
+                // Check if a rep with the canonical name already exists
+                rep = Reps.FirstOrDefault(r => r.Name == canonicalName);
+                if (rep != null)
+                {
+                    UpdateRepTicketMetrics(rep, newTicket);
+                }
+                else
+                {
+                    // Create new rep using canonical name from alias
+                    rep = new Rep
+                    {
+                        Name = canonicalName,
+                        Extension = "None"
+                    };
+
+                    UpdateRepTicketMetrics(rep, newTicket);
+                    Reps.Add(rep);
+                }
             }
 
             Tickets.Add(newTicket);
@@ -111,11 +168,11 @@ namespace CallMetrics.Data
                 rep.OutboundCalls += 1;
                 rep.OutboundDuration += call.Duration;
             }
-            if (call.Duration > 30)
+            if (call.Duration > 30 * 60) // 30 minutes  
             {
                 rep.CallsOver30 += 1;
             }
-            if (call.Duration > 60)
+            if (call.Duration > 60 * 60) // 60 minutes
             {
                 rep.CallsOver60 += 1;
             }

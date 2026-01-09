@@ -1,6 +1,8 @@
 ﻿
 
 
+using CallMetrics.Utilities;
+
 namespace CallMetrics.Models
 {
     

@@ -43,7 +43,7 @@
             <Button x:Name="ImportCallsButton" Content="Import Nextiva Report" Margin="0,0,0,0" Padding="10,5" Click="ImportCallReport_Click" Foreground="White"/>
 
             <!-- ticket Report Import -->
-            <ToggleButton x:Name="TicketImportTypeToggle" Visibility="Collapsed" Margin="10,0,0,0" Padding="10,5"  Checked="TicketImportTypeToggle_Checked" Unchecked="TicketImportTypeToggle_Unchecked" Foreground="White" RenderTransformOrigin="0.5,0.5" Background="#FF2196F3">
+            <ToggleButton x:Name="TicketImportTypeToggle" Visibility="Visible" Margin="10,0,0,0" Padding="10,5"  Checked="TicketImportTypeToggle_Checked" Unchecked="TicketImportTypeToggle_Unchecked" Foreground="White" RenderTransformOrigin="0.5,0.5" Background="#FF2196F3">
                 <ToggleButton.RenderTransform>
                     <TransformGroup>
                         <ScaleTransform/>
@@ -53,10 +53,11 @@
                     </TransformGroup>
                 </ToggleButton.RenderTransform>
             </ToggleButton>
-            <Button x:Name="ImportTicketsButton" Visibility="Collapsed" Content="Import CallTracker Report" Margin="0,0,0,0" Padding="10,5" Click="ImportTicketReport_Click" Foreground="White"/>
+            <Button x:Name="ImportTicketsButton" Visibility="Visible" Content="Import CallTracker Report" Margin="0,0,0,0" Padding="10,5" Click="ImportTicketReport_Click" Foreground="White"/>
 
             <Button x:Name="GenerateButton" Content="Generate Report" Margin="20,0,0,0" Padding="10,5" Click="GenerateReport_Click" Foreground="White"/>
-            <Button Content="Set Reps to Teams" Margin="20,0,0,0" Padding="10,5" Click="SetRepsToTeams_Click" Foreground="White"/>
+            <Button Content="Teams" Margin="20,0,0,0" Padding="10,5" Click="SetRepsToTeams_Click" Foreground="White"/>
+            <Button Content="Aliases" Margin="20,0,0,0" Padding="10,5" Click="SetRepAliases_Click" Foreground="White"/>
             <Button x:Name="ClearButton" Content="Clear Data" Margin="20,0,0,0" Padding="10,5" Click="ClearData_Click" Foreground="White"/>
         </StackPanel>
 
