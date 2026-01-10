@@ -35,6 +35,20 @@ namespace CallMetrics.Menus
             NumberOfRowsTextBox.Text = Settings.RankedRepsCount.ToString();
             AutoOpenReportCheckBox.IsChecked = Settings.AutoOpenReport;
             DefaultSaveLocationTextBlock.Text = Settings.DefaultReportPath;
+
+            InboundTypesPanel.Children.Clear();
+            foreach (var callType in Settings.InboundCallTypes)
+            {
+                var item = new Controls.CallTypeItem(callType, true);
+                InboundTypesPanel.Children.Add(item);
+            }
+
+            OutboundTypesPanel.Children.Clear();
+            foreach (var callType in Settings.OutboundCallTypes)
+            {
+                var item = new Controls.CallTypeItem(callType, false);
+                OutboundTypesPanel.Children.Add(item);
+            }
         }
 
         private void BrowseButton_Click(object sender, RoutedEventArgs e)
@@ -104,6 +118,63 @@ namespace CallMetrics.Menus
         {
             Settings.AutoOpenReport = false;
             Settings.Save();
+        }
+
+        private void AddInboundTypeButton_Click(object sender, RoutedEventArgs e)
+        {
+            var input = NewInboundTypeTextBox.Text.Trim().ToLower();
+            if (!string.IsNullOrWhiteSpace(input))
+            {
+                if (!Settings.InboundCallTypes.Contains(input))
+                {
+                    Settings.InboundCallTypes.Add(input);
+                    Settings.Save();
+                    ApplySettings(this, null);
+
+                    NewInboundTypeTextBox.Clear();
+                }
+                else
+                {
+                    MessageBox.Show("This Inbound Call Type already exists.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+            }
+        }
+
+        private void AddOutboundTypeButton_Click(object sender, RoutedEventArgs e)
+        {
+            var input = NewOutboundTypeTextBox.Text.Trim().ToLower();
+            if (!string.IsNullOrWhiteSpace(input))
+            {
+                if (!Settings.OutboundCallTypes.Contains(input))
+                {
+                    Settings.OutboundCallTypes.Add(input);
+                    Settings.Save();
+                    ApplySettings(this, null);
+
+                    NewOutboundTypeTextBox.Clear();
+                }
+                else
+                {
+                    MessageBox.Show("This Outbound Call Type already exists.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
+            }
+        }
+
+        private void NewInboundTypeTextBox_EnterSubmit(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                AddInboundTypeButton_Click(this, new RoutedEventArgs());
+            }
+        }
+
+        private void NewOutboundTypeTextBox_EnterSubmit(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter)
+            {
+                AddOutboundTypeButton_Click(this, new RoutedEventArgs());
+            }
         }
     }
 }

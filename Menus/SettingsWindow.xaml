@@ -71,6 +71,58 @@
 
                         </Grid>
                     </l:Card>
+
+                    <l:Card Background="#FF525252" Margin="0,5,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Label Content="Inbound Call Types:" FontSize="16"  Foreground="White" Padding="10,5,0,5" VerticalAlignment="Center" Margin="5" HorizontalAlignment="Left" Grid.Column="0"/>
+
+                            <TextBox x:Name="NewInboundTypeTextBox" FontSize="16" Foreground="White" Padding="0,5,0,5" VerticalAlignment="Center" Margin="54,5,0,5" HorizontalAlignment="Stretch" Grid.Column="1" Background="#4C101010" KeyDown="NewInboundTypeTextBox_EnterSubmit"/>
+
+                            <Button x:Name="AddInboundTypeButton" Content="Add" FontSize="14" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Column="3" Click="AddInboundTypeButton_Click" Foreground="White" />
+
+                            <WrapPanel x:Name="InboundTypesPanel" Grid.ColumnSpan="3" MinHeight="50" Margin="5" Grid.Row="1" Background="#FF3A3A3A">
+                                
+                            </WrapPanel>
+
+                        </Grid>
+                    </l:Card>
+
+                    <l:Card Background="#FF525252" Margin="0,5,0,0">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <Label Content="Outbound Call Types:" FontSize="16"  Foreground="White" Padding="10,5,0,5" VerticalAlignment="Center" Margin="5" HorizontalAlignment="Left" Grid.Column="0"/>
+
+
+                            <TextBox x:Name="NewOutboundTypeTextBox" FontSize="16" Foreground="White" Padding="0,5,0,5" VerticalAlignment="Center" Margin="40,5,0,5" HorizontalAlignment="Stretch" Grid.Column="1" Background="#4C101010" KeyDown="NewOutboundTypeTextBox_EnterSubmit"/>
+
+                            <Button x:Name="AddOutboundTypeButton" Content="Add" FontSize="14" Margin="5" VerticalAlignment="Center" HorizontalAlignment="Left" Grid.Column="3" Click="AddOutboundTypeButton_Click" Foreground="White"/>
+
+                            <WrapPanel x:Name="OutboundTypesPanel" Grid.ColumnSpan="3" MinHeight="50" Margin="5" Grid.Row="1" Background="#FF3A3A3A">
+                                
+                            </WrapPanel>
+
+                        </Grid>
+                    </l:Card>
+
                 </StackPanel>
             </ScrollViewer>
         </l:Card>

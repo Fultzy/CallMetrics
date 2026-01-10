@@ -23,6 +23,10 @@ namespace CallMetrics.Utilities
         public static bool AutoOpenReport = false;
         public static ImportType TicketImportType = ImportType.CallTracker;
         public static ImportType CallImportType = ImportType.Nextiva;
+
+        public static List<string> InboundCallTypes = new() { "Inbound" };
+        public static List<string> OutboundCallTypes = new() { "Outbound" };
+
         public static List<Team> Teams = new();
         public static List<Alias> Aliases = new();
 
@@ -36,12 +40,15 @@ namespace CallMetrics.Utilities
                     var json = System.IO.File.ReadAllText(Path);
                     var data = JsonConvert.DeserializeObject<SettingsData>(json);
                     
-
                     Teams = data.Teams;
                     RankedRepsCount = data.RankedRepsCount;
                     AutoOpenReport = data.AutoOpenReport;
                     DefaultReportPath = data.DefaultReportPath;
                     CallImportType = data.CallImportType;
+                    
+                    InboundCallTypes = data.InboundCallTypes;
+                    OutboundCallTypes = data.OutboundCallTypes;
+                    
                     TicketImportType = data.TicketImportType;
                     Aliases = data.Aliases;
                 }
@@ -79,8 +86,12 @@ namespace CallMetrics.Utilities
                     AutoOpenReport = AutoOpenReport,
                     DefaultReportPath = DefaultReportPath,
                     CallImportType = CallImportType,
+                   
+                    InboundCallTypes = InboundCallTypes,
+                    OutboundCallTypes = OutboundCallTypes,
+                    
                     TicketImportType = TicketImportType,
-                    Aliases = Aliases
+                    Aliases = Aliases,
                 };
 
                 var json = JsonConvert.SerializeObject(data, Formatting.Indented);
@@ -105,6 +116,10 @@ namespace CallMetrics.Utilities
         public bool AutoOpenReport;
         public ImportType TicketImportType;
         public ImportType CallImportType;
+
+        public List<string> InboundCallTypes;
+        public List<string> OutboundCallTypes;
+        
         public List<Team> Teams;
         public List<Alias> Aliases;
 
@@ -115,6 +130,10 @@ namespace CallMetrics.Utilities
             AutoOpenReport = false;
             TicketImportType = ImportType.CallTracker;
             CallImportType = ImportType.Nextiva;
+            
+            InboundCallTypes = new List<string> { "Inbound" };
+            OutboundCallTypes = new List<string> { "Outbound" };
+            
             Teams = new List<Team>();
             Aliases = new List<Alias>();
         }

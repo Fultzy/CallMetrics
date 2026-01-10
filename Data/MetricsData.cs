@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace CallMetrics.Data
 {
@@ -105,6 +106,8 @@ namespace CallMetrics.Data
 
             var repNameFromTicket = newTicket.TicketEntries.First().AssignedToName;
 
+            var alias = GetAliasForRepName(repNameFromTicket);
+
             // Try direct match first
             var rep = Reps.FirstOrDefault(r => r.Name == repNameFromTicket);
             if (rep != null)
@@ -114,33 +117,40 @@ namespace CallMetrics.Data
             else
             {
                 // Try to resolve via alias mapping
-                var alias = GetAliasForRepName(repNameFromTicket);
-                if (alias.IsNull())
+                if (!alias.IsNull())
                 {
-                    // No alias and no existing rep -> cannot resolve assignment
-                    return false;
-                }
+                    // Check if a rep with the alias name already exists
+                    rep = Reps.FirstOrDefault(r => r.Name == alias.Name);
+                    if (rep != null)
+                    {
+                        UpdateRepTicketMetrics(rep, newTicket);
+                    }
+                    else
+                    {
+                        // Create new rep using canonical name from alias
+                        rep = new Rep
+                        {
+                            Name = alias.Name,
+                            Extension = "None"
+                        };
 
-                var canonicalName = alias.Name;
-
-                // Check if a rep with the canonical name already exists
-                rep = Reps.FirstOrDefault(r => r.Name == canonicalName);
-                if (rep != null)
-                {
-                    UpdateRepTicketMetrics(rep, newTicket);
+                        UpdateRepTicketMetrics(rep, newTicket);
+                        Reps.Add(rep);
+                    }
                 }
                 else
                 {
-                    // Create new rep using canonical name from alias
                     rep = new Rep
                     {
-                        Name = canonicalName,
+                        Name = repNameFromTicket,
                         Extension = "None"
                     };
 
                     UpdateRepTicketMetrics(rep, newTicket);
                     Reps.Add(rep);
                 }
+
+                
             }
 
             Tickets.Add(newTicket);
@@ -158,29 +168,34 @@ namespace CallMetrics.Data
         {
             rep.TotalCalls += 1;
             rep.TotalDuration += call.Duration;
-            if (call.CallType.ToLower().Contains("inbound"))
+
+            if (Settings.InboundCallTypes.Contains(call.CallType.ToLower()))
             {
                 rep.InboundCalls += 1;
                 rep.InboundDuration += call.Duration;
             }
-            else if (call.CallType.ToLower().Contains("outbound"))
+            else if (Settings.OutboundCallTypes.Contains(call.CallType.ToLower()))
             {
                 rep.OutboundCalls += 1;
                 rep.OutboundDuration += call.Duration;
             }
+
             if (call.Duration > 30 * 60) // 30 minutes  
             {
                 rep.CallsOver30 += 1;
             }
+
             if (call.Duration > 60 * 60) // 60 minutes
             {
                 rep.CallsOver60 += 1;
             }
+
             if (call.DateTime.DayOfWeek == DayOfWeek.Saturday || call.DateTime.DayOfWeek == DayOfWeek.Sunday)
             {
                 rep.WeekendCalls += 1;
             }
-            if (call.IsInternal())
+
+            if (call.IsInternal()) // only used for Nextiva
             {
                 rep.InternalCalls += 1;
             }
