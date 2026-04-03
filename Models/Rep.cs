@@ -30,6 +30,11 @@ namespace CallMetrics.Models
         public int CallsOver30 { get; set; } = 0;
         public int CallsOver60 { get; set; } = 0;
 
+        public int InboundCallsOver30 { get; set; } = 0;
+        public int InboundCallsOver60 { get; set; } = 0;
+        public int OutboundCallsOver30 { get; set; } = 0;
+        public int OutboundCallsOver60 { get; set; } = 0;
+
         public int WeekendCalls { get; set; } = 0;
         public int InternalCalls { get; set; } = 0;
 
@@ -66,6 +71,11 @@ namespace CallMetrics.Models
             return TotalCalls - InternalCalls - WeekendCalls;
         }
 
+        public int AdjustedTickets()
+        {
+            return TotalTickets - WeekendTickets;
+        }
+
         public float AverageDuration()
         {
             if (TotalCalls == 0) return 0; 
@@ -74,7 +84,7 @@ namespace CallMetrics.Models
 
         public string Over30Percentage()
         {
-            if (TotalCalls == 0) return "Divided by 0!";
+            if (TotalCalls == 0) return "No Call Data!";
             return ((float)CallsOver30 / (float)TotalCalls) * 100 + "%";
         }
 
@@ -86,7 +96,7 @@ namespace CallMetrics.Models
 
         public string Over60Percentage()
         {
-            if (TotalCalls == 0) return "Divided by 0!";
+            if (TotalCalls == 0) return "No Call Data!";
             return ((float)CallsOver60 / (float)TotalCalls) * 100 + "%";
         }
 
@@ -103,6 +113,48 @@ namespace CallMetrics.Models
                 return $"{time.Minutes}m {time.Seconds}s";
             else
                 return $"{time.Hours + (time.Days * 24)}h {time.Minutes}m {time.Seconds}s";
+        }
+
+        internal string CallsToTicketsRatio()
+        {
+            if (TotalTickets == 0) return "No Ticket Data!";
+            return Math.Round((float)TotalCalls / (float)TotalTickets, 2).ToString();
+        }
+
+        internal string InboundOver30Percentage()
+        {
+            if (InboundCalls == 0) return "No Call Data!";
+            return ((float)InboundCallsOver30 / (float)InboundCalls) * 100 + "%";
+        }
+
+        internal string InboundOver60Percentage()
+        {
+            if (InboundCalls == 0) return "No Call Data!";
+            return ((float)InboundCallsOver60 / (float)InboundCalls) * 100 + "%";
+        }
+
+        internal string OutboundOver30Percentage()
+        {
+            if (OutboundCalls == 0) return "No Call Data!";
+            return ((float)OutboundCallsOver30 / (float)OutboundCalls) * 100 + "%";
+        }
+
+        internal string OutboundOver60Percentage()
+        {
+            if (OutboundCalls == 0) return "No Call Data!";
+            return ((float)OutboundCallsOver60 / (float)OutboundCalls) * 100 + "%";
+        }
+
+        internal object AverageInboundDuration()
+        {
+            if (InboundCalls == 0) return 0;
+            return InboundDuration / InboundCalls;
+        }
+
+        internal object AverageOutboundDuration()
+        {
+            if (OutboundCalls == 0) return 0;
+            return OutboundDuration / OutboundCalls;
         }
     }
 }

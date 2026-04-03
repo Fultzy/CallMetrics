@@ -45,6 +45,9 @@ namespace CallMetrics.Controls
 
             IncludeInMetricsCheckBox.IsChecked = team.IncludeInMetrics;
 
+            ExcludeTeamCheckBox.IsChecked = team.IsExcluded;
+
+
             IsDepartmentCheckBox.IsChecked = team.IsDepartment;
             if (team.IsDepartment)
             {
@@ -210,6 +213,29 @@ namespace CallMetrics.Controls
             RefreshRequest?.Invoke(this, e);
         }
 
+        public void ExcludeTeamCheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            if (teamIndex >= 0)
+            {
+                var updatedTeam = Settings.Teams[teamIndex];
+                updatedTeam.IsExcluded = true;
+                Settings.Teams[teamIndex] = updatedTeam;
+                Settings.Save();
+            }
+        }
+
+        public void ExcludeTeamCheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            if (teamIndex >= 0)
+            {
+                var updatedTeam = Settings.Teams[teamIndex];
+                updatedTeam.IsExcluded = false;
+                Settings.Teams[teamIndex] = updatedTeam;
+                Settings.Save();
+            }
+        }
 
 
         private void RepsWrapPanel_DragOver(object sender, DragEventArgs e)

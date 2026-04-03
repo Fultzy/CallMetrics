@@ -22,7 +22,7 @@ namespace CallMetrics.Utilities
         public static int RankedRepsCount = 10;
         public static bool AutoOpenReport = false;
         public static ImportType TicketImportType = ImportType.CallTracker;
-        public static ImportType CallImportType = ImportType.Nextiva;
+        public static ImportType CallImportType = ImportType.Five9;
 
         public static List<string> InboundCallTypes = new() { "Inbound" };
         public static List<string> OutboundCallTypes = new() { "Outbound" };
@@ -79,6 +79,10 @@ namespace CallMetrics.Utilities
 
             try
             {
+                // BUGFIX: force inbound and outbound types as lowercase
+                InboundCallTypes = InboundCallTypes.Select(t => t.ToLower()).ToList();
+                OutboundCallTypes = OutboundCallTypes.Select(t => t.ToLower()).ToList();
+
                 var data = new SettingsData
                 {
                     Teams = Teams,
@@ -131,8 +135,8 @@ namespace CallMetrics.Utilities
             TicketImportType = ImportType.CallTracker;
             CallImportType = ImportType.Nextiva;
             
-            InboundCallTypes = new List<string> { "Inbound" };
-            OutboundCallTypes = new List<string> { "Outbound" };
+            InboundCallTypes = new List<string> { "inbound" };
+            OutboundCallTypes = new List<string> { "outbound" };
             
             Teams = new List<Team>();
             Aliases = new List<Alias>();
@@ -157,6 +161,7 @@ namespace CallMetrics.Utilities
         public bool IncludeInMetrics;
         public bool IsDepartment;
         public bool HideTeam;
+        public bool IsExcluded;
 
         public List<string> Members;
 

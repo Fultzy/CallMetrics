@@ -183,11 +183,29 @@ namespace CallMetrics.Data
             if (call.Duration > 30 * 60) // 30 minutes  
             {
                 rep.CallsOver30 += 1;
+
+                if (Settings.InboundCallTypes.Contains(call.CallType.ToLower()))
+                {
+                    rep.InboundCallsOver30 += 1;
+                }
+                else if (Settings.OutboundCallTypes.Contains(call.CallType.ToLower()))
+                {
+                    rep.OutboundCallsOver30 += 1;
+                }
             }
 
             if (call.Duration > 60 * 60) // 60 minutes
             {
                 rep.CallsOver60 += 1;
+
+                if (Settings.InboundCallTypes.Contains(call.CallType.ToLower()))
+                {
+                    rep.InboundCallsOver60 += 1;
+                }
+                else if (Settings.OutboundCallTypes.Contains(call.CallType.ToLower()))
+                {
+                    rep.OutboundCallsOver60 += 1;
+                }
             }
 
             if (call.DateTime.DayOfWeek == DayOfWeek.Saturday || call.DateTime.DayOfWeek == DayOfWeek.Sunday)

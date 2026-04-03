@@ -19,7 +19,12 @@
             <Separator BorderBrush="#FF737373" BorderThickness="2" Grid.ColumnSpan="3" Margin="5,30,5,0" VerticalAlignment="top"/>
 
             <Label x:Name="TeamNameLabel" Grid.Column="0" Margin="5,1,5,0" Content="Team Name is longer than you think it should be" Foreground="White" FontSize="16" HorizontalAlignment="Left" VerticalAlignment="Top" AllowDrop="True"  DragOver="RepsWrapPanel_DragOver" Drop="RepsWrapPanel_Drop"/>
-            
+
+            <!-- Exclude Team -->
+            <Label Content="Exclude Team:" HorizontalAlignment="Right" VerticalAlignment="Top" Foreground="#FFA9A6A6" Grid.Column="1" Margin="0,0,25,0" Padding="0" AllowDrop="True"  DragOver="RepsWrapPanel_DragOver" Drop="RepsWrapPanel_Drop"/>
+
+            <CheckBox x:Name="ExcludeTeamCheckBox" Grid.Column="1" Margin="0,0,0,0" HorizontalAlignment="Right" VerticalAlignment="Top" IsChecked="False" Checked="ExcludeTeamCheckBox_Checked" Unchecked="ExcludeTeamCheckBox_Unchecked" Height="17" Width="29" Background="#FF4DE040" BorderBrush="#FF6836C1"/>
+
             <!-- Hide Team -->
             <Label Content="Hide Team:" HorizontalAlignment="Right" VerticalAlignment="Top" Foreground="#FFA9A6A6" Grid.Column="1" Margin="0,15,25,0" Padding="0" AllowDrop="True"  DragOver="RepsWrapPanel_DragOver" Drop="RepsWrapPanel_Drop"/>
 

@@ -1,26 +1,29 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.Office.Interop.Excel;
-using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Linq;
+﻿using CallMetrics.Controllers.Readers.Nextiva;
+using CallMetrics.Data;
 using CallMetrics.Models;
 using CallMetrics.Utilities;
-using System.Windows.Controls;
+using Microsoft.Office.Interop.Excel;
+using System;
+using System;
+using System.Collections.Generic;
+using System.Collections.Generic;
+using System.Configuration;
 using System.Drawing;
-using System.Windows.Media;
-using CallMetrics.Controllers.Readers.Nextiva;
+using System.Linq;
+using System.Linq;
 using System.Reflection.Metadata.Ecma335;
-using CallMetrics.Data;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Ink;
+using System.Windows.Media;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CallMetrics.Controllers.Generators.WorkSheets
 {
 
-    public class SupportRepMetrics
+    public class SupportRepMetrics : IDisposable
     {
         public Rep AverageRep = null;
         public Rep TotalRep = null;
@@ -33,20 +36,94 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
         public event EventHandler<int> ProgressChanged;
 
+        // as repName, generalTableRow
+        private Dictionary<string, int> GeneralTableReference;
+        private int GeneralTableStart = 0;
+        private int GeneralTableEnd = 0;
+        private int WorkdaysRow = 0;
+        private int WorkdaysCol = 2;
+
+        // as teamName, teamTableRow
+        private Dictionary<string, int> TeamsTableReference;
+
+        // headers as ColumnName, ColumnNumber
+        public static Dictionary<string, int> UsrHeader = new()
+        {
+            { "Name", 1 },
+            { "Tickets", 2 },
+            { "Wkd Tickets", 3 },
+            { "Adj Tickets", 4 },
+            { "Tickets/Day", 5 },
+            { "Calls", 6 },
+            { "Wkd Calls", 7 },
+            { "Inbound Calls", 8 },
+            { "Outbound Calls", 9 },
+            { "Adj Calls", 10 },
+            { "Calls/Day", 11 },
+            { "Calls/Tickets", 12 },
+            { "Avg Call Time", 13 },
+            { "Total Ph Time", 14 },
+            { "Calls > 30m", 15 },
+            { "> 30%", 16 },
+            { "Calls > 1h", 17 },
+            { "> 60%", 18 },
+            { "Absences", 19 },
+            { "Notes", 20 }, // skip column 18 for formatting
+        };
+
+        public static Dictionary<string, int> AvgHeader = new()
+        {
+            { "Adj Tickets", 2 },
+            { "Tickets/Day", 4 },
+            { "Adj Calls", 6 },
+            { "Calls/Day", 8 },
+            { "Calls/Tickets", 10 },
+            { "Avg Call Time", 12 },
+            { "Total Ph Time", 14 },
+            { "> 30%", 16 },
+            { "> 60%", 18 },
+        };
+
+        public static Dictionary<string, int> AvgTypeHeader = new()
+        {
+            { "Calls", 2 },
+            { "Calls/Day", 4 },
+            { "Avg Call Time", 6 },
+            { "Total Ph Time", 8 },
+            { "Calls > 30m", 10 },
+            { "> 30%", 12 },
+            { "Calls > 1h", 14 },
+            { "> 60%", 16 },  
+        };
+
+        public static Dictionary<string, int> TeamRefTable = new()
+        {
+            { "Name", 1 },
+            { "Adj Tickets", 2 },
+            { "Tickets/Day", 3 },
+            { "Inbound Calls", 4 },
+            { "Inbound Calls/Day", 5 },
+            { "Outbound Calls", 6 },
+            { "Outbound Calls/Day", 7 },
+            { "Calls", 8 },
+            { "Calls/Day", 9 },
+            { "Avg Call Time", 10 },
+            { "Absences", 12 },
+        };
+
+        private List<Rep> Departments;
+        private List<Team> Teams;
+        private List<Rep> Reps;
+        private List<Rep> ExcludeReps;
+        private List<Rep> IncludedReps;
+        private List<Rep> WeekendReps;
+
+        public void Dispose()
+        {
+        }
+
         public Worksheet Create(List<Rep> importReps, Worksheet worksheet)
         {
-            ///////////////////////////////////////////////////////////////
-            // This method will create the Support Metric Report Worksheet.
-            // This worksheet will list out all metrics for support within
-            // the specified time span. it will list out company wide metrics
-            // as well as metrics for each individual support agent.
-
-            // This report will be very different from the other reports
-            // it will show staff wide metrics and rankings of support reps
-            // based on their metrics and showing several categories.
-            ///////////////////////////////////////////////////////////////
-
-
             /////////////////////////////////////////// WorkSheet Setup
             // setup worksheet
             worksheet.Name = "Support Metric Report";
@@ -54,30 +131,90 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
             // set the row counter
             int row = 1;
+            GeneralTableReference = new();
+            TeamsTableReference = new();
 
-            var departments = importReps.Where(r => Settings.Teams.Any(t =>
-                t.Members.Contains(r.Name) &&
-                t.IsDepartment == true)).ToList();
+            ButcketReps(importReps);
 
-            var reps = importReps.Where(r => Settings.Teams.Any(t =>
-                t.Members.Contains(r.Name) &&
-                t.IncludeInMetrics == true)).ToList();
+            if (Reps.Count == 0)
+                Reps = importReps ;
 
-            if (reps.Count == 0)
-                reps = importReps;
+            var repCount = Reps.Count - ExcludeReps.Count;
+            if (rankCount > repCount + 1) // add 1 to include the average rep
+                rankCount = repCount + 1;
 
-            if (rankCount > reps.Count)
-                rankCount = reps.Count;
 
-            percentageStep = CalculateProgressSteps(reps.Count + departments.Count, rankCount);
+            // calculate progress step
+            currentProgress = 0;
+            var teamTables = Settings.Teams.Count(t => t.IncludeInMetrics && t.Members.Count > 0);
+            percentageStep = SupportMetricsHelper.CalculateProgressSteps(Departments.Count, Reps.Count, rankCount, teamTables);
 
+            // set Date Range
             DateRange dateRange = new DateRange();
             dateRange.StartDate = MetricsData.Calls.Min(c => c.DateTime);
             dateRange.EndDate = MetricsData.Calls.Max(c => c.DateTime);
 
-            /////////////////////////////////////////// Begin MetricsData Entry
+
+            /////////////////////////////////////////// Begin MetricsData Entry0.
+            /////////// Top References
+            worksheet = AddTopReferences(worksheet, dateRange, row, out row);
+
+            /////////// Table 1 - Company Wide Metrics
+            worksheet = AddDepartmentMetrics(Departments, worksheet, row, out row);
+
+            /////////// Table 2 - User Metrics
+            worksheet = AddGeneralTableMetrics(IncludedReps, worksheet, row, out row);
+            
+
+            /////////// Table 3 - Average Lineup
+            worksheet = AddAverageLineupMetrics(IncludedReps, worksheet, row, out row);
+
+            /////////// Table 4 - Inbound Average Lineup
+            worksheet = AddInboundAverageMetrics(IncludedReps, worksheet, row, out row);
+
+            /////////// Table 5 - Outbound Average Lineup
+            worksheet = AddOutboundAverageMetrics(IncludedReps, worksheet, row, out row);
+
+            /////////// Table 6+ - Individual Teams Tables
+            worksheet = AddEachTeamsMetrics(Reps, worksheet, row, out row);
+
+            // go back and write top ref team table
+            worksheet = AddTeamsOverview(Teams, worksheet, 2, out int noRow, 3);
+
+            // format the worksheet
+            worksheet = FormatWorksheet(worksheet, row, rankCount);
+
+            Console.WriteLine(" Done!");
+            return worksheet;
+        }
+
+        private void ButcketReps(List<Rep> importReps)
+        {
+            Departments = importReps.Where(r => Settings.Teams.Any(t =>
+                t.Members.Contains(r.Name) &&
+                t.IsDepartment == true)).ToList();
+
+            Teams = Settings.Teams.Where(t => t.IncludeInMetrics && t.Members.Count > 0).ToList();
+
+            Reps = importReps.Where(r => Settings.Teams.Any(t =>
+                t.Members.Contains(r.Name) &&
+                t.IncludeInMetrics == true)).ToList();
+
+            ExcludeReps = Reps.Where(r => Settings.Teams.Any(t =>
+                t.Members.Contains(r.Name) &&
+                t.IsExcluded == true)).ToList();
+
+            IncludedReps = importReps.Where(r => Settings.Teams.Any(t => t.Members.Contains(r.Name) && t.IncludeInMetrics && !t.IsExcluded)).ToList();
+
+            WeekendReps = Reps.Where(r => r.WeekendCalls > 0 || r.WeekendTickets > 0).ToList();
+        }
+
+
+
+        private Worksheet AddTopReferences(Worksheet worksheet, DateRange dateRange, int row, out int newRow)
+        {
             // Setup top row
-            worksheet.Range["A1", "T1"].Font.Size = 14;
+            worksheet.Range["A1", "T1"].Font.Size = 12;
             worksheet.Range["A1", "T1"].Interior.Color = XlRgbColor.rgbLightSteelBlue;
 
             // add date range to the worksheet
@@ -90,365 +227,211 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             worksheet.Range["B1"].HorizontalAlignment = XlHAlign.xlHAlignRight;
             worksheet.Range["B2"].HorizontalAlignment = XlHAlign.xlHAlignLeft;
 
-            // set Total Normal Working Days cell
-            worksheet.Cells[row, 4] = "Total Working Days:";
-            worksheet.Range["D" + 1, "E" + 1].Merge();
+            row += 1;
 
-            worksheet.Cells[row, 6] = dateRange.WorkDays();
-            worksheet.Cells[row, 6].Interior.Color = XlRgbColor.rgbLightYellow;
-            worksheet.Cells[row, 6].Font.Bold = true;
-
-            row += 3;
-
-            /////////// Table 1 - Company Wide Metrics
-            if (departments.Count > 0)
+            // set Rep Counts
+            worksheet.Cells[row, 1] = "Rep Counts";
+            worksheet.Cells[row, 1].Interior.Color = XlRgbColor.rgbLightSteelBlue;
+            worksheet.Cells[row, 1].Font.Bold = true;
+            foreach (var team in Teams)
             {
-                worksheet = AddDepartmentHeader(departments, worksheet, row);
-                row++;
-                worksheet = AddDepartmentMetrics(departments, worksheet, row);
-                
-                row += departments.Count;
+                row += 1;
+                worksheet.Cells[row, 1] = team.Name;
+                worksheet.Cells[row, 2] = team.Members.Count;
             }
 
-            row += 3;
+            row += 1;
+            worksheet.Cells[row, 1] = "Total Reps";
+            worksheet.Cells[row, 2] = Reps.Count;
 
-            /////////// Table 2 - User Metrics
-            worksheet = AddGeneralTableHeader(worksheet, row);
-            row++;
-            worksheet = AddGeneralTableMetrics(reps, worksheet, row);
+            // add weekend rep count
+            row += 2;
+            worksheet.Cells[row, 1] = "Weekend Reps";
+            worksheet.Cells[row, 2] = WeekendReps.Count;
 
-            row += reps.Count + 2;
-            row += 3;
+            // add Work Days
+            row += 1;
+            worksheet.Cells[row, 1] = "Work Days";
+            worksheet.Cells[row, 2] = dateRange.WorkDays();
+            WorkdaysRow = row;
 
-            /////////// Table 3 - Average Lineup
-            worksheet = AddAverageLineupHeader(worksheet, row);
-            row++;
-            worksheet = AddAverageLineupMetrics(reps, worksheet, row, out int newRow);
-            row = row + rankCount + 2;
 
-            row++;
-            row++;
-
-            /////////// Individual Teams Tables
-            worksheet = AddEachTeamsMetrics(reps, worksheet, row);
-
-            // format the worksheet
-            worksheet = FormatWorksheet(worksheet, row, rankCount);
-
-            Console.WriteLine(" Done!");
+            newRow = row > Teams.Count * 2 ? row + 2 : Teams.Count * 2 + 2;
             return worksheet;
         }
-        
+
 
         ///////// FIRST TABLE
-        private Worksheet AddDepartmentHeader(List<Rep> reps, Worksheet worksheet, int row)
+        private Worksheet AddDepartmentMetrics(List<Rep> departments, Worksheet worksheet, int row, out int newRow)
         {
-            // First header row on worksheet
-            worksheet.Cells[row - 1, 1] = "Departments";
-            worksheet.Cells[row - 1, 1].Font.Bold = true;
-            worksheet.Cells[row - 1, 1].Font.Size = 14;
-            worksheet.Cells[row - 1, 1].Interior.Color = XlRgbColor.rgbLightSteelBlue;
+            worksheet = HeaderHelper.WriteOneSidedHeader(worksheet, row, "Departments", UsrHeader);
+            row += 2;
 
-            worksheet.Cells[row, 1] = "Name";
-            worksheet.Cells[row, 2] = "Tickets";
-            worksheet.Cells[row, 3] = "Wkd Tickets";
-            worksheet.Cells[row, 4] = "Adj Tickets";
-            worksheet.Cells[row, 5] = "Calls ↓"; // list is sorted
-            worksheet.Cells[row, 6] = "Wkd Calls";
-            worksheet.Cells[row, 7] = "Internal Calls";
-            worksheet.Cells[row, 8] = "Adj Calls";
-            worksheet.Cells[row, 9] = "Calls/Tickets";
-            worksheet.Cells[row, 10] = "Avg Call Time";
-            worksheet.Cells[row, 11] = "Total Ph Time";
-            worksheet.Cells[row, 12] = "Calls > 30m";
-            worksheet.Cells[row, 13] = "> 30%";
-            worksheet.Cells[row, 14] = "Calls > 1h";
-            worksheet.Cells[row, 15] = "> 1h%";
-            worksheet.Cells[row, 16] = "Absences";
-            worksheet.Cells[row, 17] = "Tickets/Day";
-            worksheet.Cells[row, 18] = "Calls/Day";
-            worksheet.Cells[row, 20] = "Notes";
-
-            // format header row
-            worksheet.Range[$"A{row}", $"T{row}"].Font.Bold = true;
-
-            // Make the background color of the header light blue
-            worksheet.Range[$"A{row}", $"T{row}"].Interior.Color = XlRgbColor.rgbLightSteelBlue;
-            worksheet.Range["A" + row, "T" + row].Borders[XlBordersIndex.xlEdgeBottom].LineStyle = XlLineStyle.xlContinuous;
-
-            // freeze the header row
-            worksheet.Application.ActiveWindow.SplitRow = 1;
-            worksheet.Application.ActiveWindow.FreezePanes = true;
-
-            return worksheet;
-        }
-
-        private Worksheet AddDepartmentMetrics(List<Rep> departments, Worksheet worksheet, int row)
-        {
             // sort departments by total calls descending
             departments = departments.OrderByDescending(u => u.TotalCalls).ToList();
 
-            var totalUser = CreateTotalUser(departments);
+            // total user
+            var totalUser = SupportMetricsHelper.CreateTotalUser(Reps);
             departments.Insert(0, totalUser);
+
+            // add support department
+            var supportUser = SupportMetricsHelper.CreateTotalUser(IncludedReps);
+            supportUser.Name = "Support";
+            departments.Insert(1, supportUser);
 
             foreach (var dept in departments)
             {
-                worksheet = AddUserMetrics(dept, worksheet, row);
+                worksheet = WriteUserMetrics(dept, worksheet, row);
                 ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
                 row++;
             }
 
-            //// alternate row colors with smoke
-            //if (row % 2 == 0)
-            //{
-            //    worksheet.Range["A" + row, "T" + row].Interior.Color = XlRgbColor.rgbWhiteSmoke;
-            //}
-
+            newRow = row + Departments.Count + 1;
             return worksheet;
         }
-
-
 
 
         ///////// SECOND TABLE
-        private Worksheet AddGeneralTableHeader(Worksheet worksheet, int row)
+        private Worksheet AddGeneralTableMetrics(List<Rep> reps, Worksheet worksheet, int row, out int newRow)
         {
-            // First header row on worksheet
-            worksheet.Cells[row - 1, 1] = "Calls";
-            worksheet.Cells[row - 1, 1].Font.Bold = true;
-            worksheet.Cells[row - 1, 1].Font.Size = 14;
-            worksheet.Cells[row - 1, 1].Interior.Color = XlRgbColor.rgbLightSteelBlue;
+            // add absences note above header
+            worksheet.Cells[row, UsrHeader["Absences"]] = "Edit Absences Here";
+            worksheet.Cells[row, UsrHeader["Absences"]].Font.Italic = true;
+            worksheet.Cells[row, UsrHeader["Absences"]].Font.Size = 10;
 
-            worksheet.Cells[row, 1] = "Name  ↓"; // list is sorted
-            worksheet.Cells[row, 2] = "Tickets";
-            worksheet.Cells[row, 3] = "Wkd Tickets";
-            worksheet.Cells[row, 4] = "Adj Tickets";
-            worksheet.Cells[row, 5] = "Calls"; 
-            worksheet.Cells[row, 6] = "Wkd Calls";
-            worksheet.Cells[row, 7] = "Internal Calls";
-            worksheet.Cells[row, 8] = "Adj Calls";
-            worksheet.Cells[row, 9] = "Calls/Tickets";
-            worksheet.Cells[row, 10] = "Avg Call Time";
-            worksheet.Cells[row, 11] = "Total Ph Time";
-            worksheet.Cells[row, 12] = "Calls > 30m";
-            worksheet.Cells[row, 13] = "> 30%";
-            worksheet.Cells[row, 14] = "Calls > 1h";
-            worksheet.Cells[row, 15] = "> 1h%";
-            worksheet.Cells[row, 16] = "Absences";
-            worksheet.Cells[row, 17] = "Tickets/Day";
-            worksheet.Cells[row, 18] = "Calls/Day";
-            worksheet.Cells[row, 20] = "Notes";
+            worksheet = HeaderHelper.WriteOneSidedHeader(worksheet, row, "Metrics", UsrHeader);
+            
+            row += 2;
 
+            worksheet = WriteAverageUser(worksheet, row, reps);
+            GeneralTableStart = row;
+            row++;
 
-            // format header row
-            worksheet.Range[$"A{row}", $"T{row}"].Font.Bold = true;
-
-            // Make the background color of the header light blue
-            worksheet.Range[$"A{row}", $"T{row}"].Interior.Color = XlRgbColor.rgbLightSteelBlue;
-
-            // add bottom border to this header
-            worksheet.Range["A" + row, "T" + row].Borders[XlBordersIndex.xlEdgeBottom].LineStyle = XlLineStyle.xlContinuous;
-
-            // left aligh the name cell
-            worksheet.Cells[row, 1].HorizontalAlignment = XlHAlign.xlHAlignLeft;
-
-            // center align rest of header row
-            worksheet.Range["B" + row, "T" + row].HorizontalAlignment = XlHAlign.xlHAlignCenter;
-
-            // freeze the header row
-            worksheet.Application.ActiveWindow.SplitRow = 1;
-            worksheet.Application.ActiveWindow.FreezePanes = true;
-
-            return worksheet;
-        }
-
-        private Worksheet AddGeneralTableMetrics(List<Rep> reps, Worksheet worksheet, int row)
-        {
-            // sort then add total then average rep to the front
-            reps = reps.OrderBy(u => u.Name).ToList();
-            var repInt= reps.Count;
-
-            var totalUser = CreateTotalUser(reps);
-            var averageUser = CreateAverageUser(reps);
-
-            reps.Insert(0, totalUser);
-            reps.Insert(1, averageUser);
-
-            // setup Total and Average users Ticket Formula
-
-            int stRow = row + 2;
-            int edRow = row + repInt + 1; 
-
-            int tRow = row;
-            worksheet.Cells[tRow, 2].Formula = "=SUM(B" + (stRow) + ":B" + (edRow) + ")";
-            worksheet.Cells[tRow, 3].Formula = "=SUM(C" + (stRow) + ":C" + (edRow) + ")";
-
-            int aRow = tRow + 1;
-            worksheet.Cells[aRow, 2].Formula = "=IF(SUM(B" + (stRow) + ":B" + (edRow) + ")<=0,0,ROUND(AVERAGE(B" + (stRow) + ":B" + (edRow) + "),2))";
-            worksheet.Cells[aRow, 3].Formula = "=IF(SUM(C" + (stRow) + ":C" + (edRow) + ")<=0,0,ROUND(AVERAGE(C" + (stRow) + ":C" + (edRow) + "),2))";
 
             int userCtr = 0;
             foreach (var rep in reps)
             {
-                worksheet = AddUserMetrics(rep, worksheet, row);
 
-                if (rep.Name == "-- TOTAL --")
-                {
-                    // =SUM(P10:P28)
-                    worksheet.Cells[row, 16].Formula = $"=SUM(P{stRow}:P{edRow})";
-                }
-                else if (rep.Name == "-- AVERAGE --")
-                {
-                    // =IF(SUM(P10:P28)<=0,0,ROUND(AVERAGE(P10:P28),2))
-                    worksheet.Cells[row, 16].Formula = $"=IF(SUM(P{stRow}:P{edRow})<=0,0,ROUND(AVERAGE(P{stRow}:P{edRow}),2))";
-                }
-                else
-                {
-                    worksheet.Cells[row, 16] = 0; // absences
-
-                }
-
+                worksheet = WriteUserMetrics(rep, worksheet, row);
+                GeneralTableReference.Add(rep.Name, row);
 
                 ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
                 userCtr++;
                 row++;
             }
 
+            GeneralTableEnd = row - 1;
+            
+            newRow = row + 1;
             return worksheet;
         }
 
-
-
-        private Worksheet AddUserMetrics(Rep rep, Worksheet worksheet, int row)
+        private Worksheet WriteUserMetrics(Rep rep, Worksheet worksheet, int row)
         {
             if (rep == null)
                 return worksheet;
 
             var team = Settings.Teams.FirstOrDefault(t => t.Members.Contains(rep.Name));
 
-            // add the record to the worksheet
-            if (team.IsDepartment)
-                worksheet.Cells[row, 1] = rep.Name;
-            else
-                worksheet.Cells[row, 1] = rep.LastInitial();
-
-            if (rep.Name != "-- TOTAL --" && rep.Name != "-- AVERAGE --")
+            try
             {
-                worksheet.Cells[row, 2] = rep.TotalTickets;
-                worksheet.Cells[row, 3] = rep.WeekendTickets;
+                // add the record to the worksheet
+                if (team.IsDepartment)
+                    worksheet.Cells[row, UsrHeader["Name"]] = rep.Name;
+                else
+                    worksheet.Cells[row, UsrHeader["Name"]] = rep.LastInitial();
+
+                worksheet.Cells[row, UsrHeader["Tickets"]] = rep.TotalTickets;
+                worksheet.Cells[row, UsrHeader["Wkd Tickets"]] = rep.WeekendTickets;
+                worksheet.Cells[row, UsrHeader["Adj Tickets"]] = rep.AdjustedTickets();
+
+                worksheet.Cells[row, UsrHeader["Calls"]] = rep.TotalCalls;
+                worksheet.Cells[row, UsrHeader["Wkd Calls"]] = rep.WeekendCalls;
+                worksheet.Cells[row, UsrHeader["Inbound Calls"]] = rep.InboundCalls;
+                worksheet.Cells[row, UsrHeader["Outbound Calls"]] = rep.OutboundCalls;
+                worksheet.Cells[row, UsrHeader["Adj Calls"]] = rep.AdjustedCalls();
+
+                worksheet.Cells[row, UsrHeader["Calls/Tickets"]] = rep.CallsToTicketsRatio();
+                worksheet.Cells[row, UsrHeader["Avg Call Time"]] = rep.FormattedDuration(Convert.ToInt32(rep.AverageDuration()));
+                worksheet.Cells[row, UsrHeader["Total Ph Time"]] = rep.FormattedDuration(rep.TotalDuration);
+
+                worksheet.Cells[row, UsrHeader["Calls > 30m"]] = rep.CallsOver30;
+                worksheet.Cells[row, UsrHeader["> 30%"]] = rep.Over30Percentage();
+                worksheet.Cells[row, UsrHeader["Calls > 1h"]] = rep.CallsOver60;
+                worksheet.Cells[row, UsrHeader["> 60%"]] = rep.Over60Percentage();
+
+                worksheet.Cells[row, UsrHeader["Absences"]] = 0;
+
+                // formula for Absences with ratio Calculations
+                // =IF(H9/E1>1,ROUND(H9/E1,2),0)
+                // something is overwriting the tickets/days cell - DEBUG
+                var abCol = SupportMetricsHelper.numToLetter(UsrHeader["Absences"]);
+                var tkCol = SupportMetricsHelper.numToLetter(UsrHeader["Adj Tickets"]);
+                var clCol = SupportMetricsHelper.numToLetter(UsrHeader["Adj Calls"]);
+
+                var wdRow = WorkdaysRow;
+                var wdCol = SupportMetricsHelper.numToLetter(2);
+
+                worksheet.Cells[row, UsrHeader["Tickets/Day"]].Formula = $"=IF({wdCol}{wdRow}>{abCol}{row},ROUND({tkCol}{row}/({wdCol}{wdRow}-{abCol}{row}),0),0)"; // tickets
+                worksheet.Cells[row, UsrHeader["Calls/Day"]].Formula = $"=IF({wdCol}{wdRow}>{abCol}{row},ROUND({clCol}{row}/({wdCol}{wdRow}-{abCol}{row}),0),0)"; // calls
+
+                if (!TicketsFormulaSourceRows.ContainsKey(rep.Name))
+                {
+                    TicketsFormulaSourceRows.Add(rep.Name, row);
+                }
+
+                var clSt = SupportMetricsHelper.numToLetter(1);
+                var clEd = SupportMetricsHelper.numToLetter(UsrHeader.Count);
+
+                // add borders to the row
+                worksheet.Range[$"{clSt}{row}", $"{clEd}{row}"].Borders[XlBordersIndex.xlEdgeTop].LineStyle = XlLineStyle.xlContinuous;
+                worksheet.Range[$"{clSt}{row}", $"{clEd}{row}"].Borders[XlBordersIndex.xlEdgeBottom].LineStyle = XlLineStyle.xlContinuous;
+
+                // left align the name cell
+                worksheet.Range["A" + row].HorizontalAlignment = XlHAlign.xlHAlignLeft;
+
+                // center align rest of row
+                worksheet.Range[$"{clSt}{row}", $"{clEd}{row}"].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+
+                // merge notes columns
+                worksheet.Range[$"{clEd}{row}", $"{SupportMetricsHelper.numToLetter(UsrHeader.Count + 2)}{row}"].Merge();
+
+                // left align notes column
+                worksheet.Range[$"{clEd}{row}", $"{SupportMetricsHelper.numToLetter(UsrHeader.Count + 2)}{row}"].HorizontalAlignment = XlHAlign.xlHAlignLeft;
+
+                // alternate row colors with smoke
+                if (row % 2 == 0)
+                {
+                    worksheet.Range["A" + row, "T" + row].Interior.Color = XlRgbColor.rgbWhiteSmoke;
+                }
             }
-
-            worksheet.Cells[row, 5] = rep.TotalCalls;
-            worksheet.Cells[row, 6] = rep.WeekendCalls;
-            worksheet.Cells[row, 7] = rep.InternalCalls;
-            worksheet.Cells[row, 8] = rep.AdjustedCalls();
-            worksheet.Cells[row, 10] = rep.FormattedDuration(Convert.ToInt32(rep.AverageDuration()));
-            worksheet.Cells[row, 11] = rep.FormattedDuration(rep.TotalDuration);
-            worksheet.Cells[row, 12] = rep.CallsOver30;
-            worksheet.Cells[row, 13] = rep.Over30Percentage();
-            worksheet.Cells[row, 14] = rep.CallsOver60;
-            worksheet.Cells[row, 15] = rep.Over60Percentage();
-
-            worksheet.Cells[row, 16] = 0; // absences
-
-            // formula for Absences Calculations
-            // =IF(H9/E1>1,ROUND(H9/E1,2),0)
-            worksheet.Cells[row, 17].Formula = $"=IF(F1>P{row},ROUND(D{row}/(F1-P{row}),0),0)";
-            worksheet.Cells[row, 18].Formula = $"=IF(F1>P{row},ROUND(H{row}/(F1-P{row}),0),0)";
-
-            // Add Adj Tickets and Calls/Ticket formulas
-            // =IF(B9-C9<0,0,B9-C9)
-            worksheet.Cells[row, 4].Formula = "=IF(B" + row + "-C" + row + "<0,0,B" + row + " - C" + row + ")";
-            worksheet.Cells[row, 9].Formula = "=IF(D" + row + "<=0,0,ROUND(H" + row + "/D" + row + ", 2))";
-
-            if (!TicketsFormulaSourceRows.ContainsKey(rep.Name))
+            catch (Exception ex)
             {
-                TicketsFormulaSourceRows.Add(rep.Name, row);
-            }
-
-            // add borders to the row
-            worksheet.Range["A" + row, "R" + row].Borders[XlBordersIndex.xlEdgeTop].LineStyle = XlLineStyle.xlContinuous;
-            worksheet.Range["A" + row, "R" + row].Borders[XlBordersIndex.xlEdgeBottom].LineStyle = XlLineStyle.xlContinuous;
-
-            // left aligh the name cell
-            worksheet.Range["A" + row].HorizontalAlignment = XlHAlign.xlHAlignLeft;
-
-            // center align rest of row
-            worksheet.Range["B" + row, "R" + row].HorizontalAlignment = XlHAlign.xlHAlignCenter;
-
-            // format the row
-            // if the username is average make the row bold
-            if (rep.Name == "-- AVERAGE --")
-            {
-                worksheet.Range["A" + row, "R" + row].Font.Bold = true;
-            }
-
-            // alternate row colors with smoke
-            if (row % 2 == 0)
-            {
-                worksheet.Range["A" + row, "T" + row].Interior.Color = XlRgbColor.rgbWhiteSmoke;
+                throw new Exception("Error adding rep metrics for " + rep.Name + ": " + ex.Message);
             }
 
             return worksheet;
         }
 
 
-        ///////// THIRD TABLE
-        private Worksheet AddAverageLineupHeader(Worksheet worksheet, int row)
-        {
-            worksheet.Cells[row - 1, 1] = "Averages";
-            worksheet.Cells[row - 1, 1].Font.Bold = true;
-            worksheet.Cells[row - 1, 1].Font.Size = 14;
-            worksheet.Cells[row - 1, 1].Interior.Color = XlRgbColor.rgbLightSteelBlue;
-
-
-            worksheet.Cells[row, 1] = "Rankings";
-            worksheet.Cells[row, 2] = "Adj Tickets";
-            worksheet.Cells[row, 4] = "Adj Calls";
-            worksheet.Cells[row, 6] = "Calls/Ticket";
-            worksheet.Cells[row, 8] = "Avg Call Time";
-            worksheet.Cells[row, 10] = "Total Ph Time";
-            worksheet.Cells[row, 12] = " > 30m %";
-            worksheet.Cells[row, 14] = " > 1h %";
-            worksheet.Cells[row, 16] = "Tickets/Day";
-            worksheet.Cells[row, 18] = "Calls/Day";
-
-            // format header row
-            worksheet.Range[$"A{row}", $"P{row}"].Font.Bold = true;
-
-            // Center and join rank headers
-            worksheet.Range["B" + row, "C" + row].Merge();
-            worksheet.Range["D" + row, "E" + row].Merge();
-            worksheet.Range["F" + row, "G" + row].Merge();
-            worksheet.Range["H" + row, "I" + row].Merge();
-            worksheet.Range["J" + row, "K" + row].Merge();
-            worksheet.Range["L" + row, "M" + row].Merge();
-            worksheet.Range["N" + row, "O" + row].Merge();
-            worksheet.Range["P" + row, "Q" + row].Merge();
-            worksheet.Range["R" + row, "S" + row].Merge();
-
-            // Make the background color of the header light blue
-            worksheet.Range[$"A{row}", $"S{row}"].Interior.Color = XlRgbColor.rgbLightSteelBlue;
-            worksheet.Range["A" + row, "S" + row].Borders[XlBordersIndex.xlEdgeBottom].LineStyle = XlLineStyle.xlContinuous;
-
-            // freeze the header row
-            worksheet.Application.ActiveWindow.SplitRow = 1;
-            worksheet.Application.ActiveWindow.FreezePanes = true;
-
-            return worksheet;
-        }
-
+        ///////// AVERAGES TABLES
         private Worksheet AddAverageLineupMetrics(List<Rep> reps, Worksheet worksheet, int row, out int newRow)
         {
             // this table is going to display data in columns. each column will be a different metric and
             // will be sorted vertically by the metric with that genReps name to the left. 
             // there will be a sudo rep added to the list that will be the average of all the genReps.
 
-            var averageRep = CreateAverageUser(reps);
+            worksheet = HeaderHelper.WriteTwoSidedHeader(worksheet, "General Averages", row, AvgHeader);
+            row += 2;
+
+            var averageRep = SupportMetricsHelper.CreateAverageUser(reps);
             reps.Insert(0, averageRep);
             var genCount = reps.Count;
 
-            // setup sorted lists for each metric, adjusted calls, average call time, total phone time, calls over 30, calls over 30 %, calls over 60, calls over 60 %
+            // setup sorted lists
+            List<Rep> adjTickets = reps.OrderByDescending(u => u.AdjustedTickets()).ToList();
+            List<Rep> callsToTickets = reps.OrderByDescending(u => u.CallsToTicketsRatio()).ToList();
+
             List<Rep> adjCalls = reps.OrderByDescending(u => u.AdjustedCalls()).ToList();
             List<Rep> avgCallTime = reps.OrderBy(u => u.AverageDuration()).ToList();
             List<Rep> totalPhoneTime = reps.OrderByDescending(u => u.TotalDuration).ToList();
@@ -456,100 +439,82 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             List<Rep> callsOver30Percent = reps.OrderBy(u => u.Over30PercentFloat()).ToList();
             List<Rep> callsOver60Percent = reps.OrderBy(u => u.Over60PercentFloat()).ToList();
 
+            int startRow = GeneralTableStart;
+            int endRow = GeneralTableEnd;
+            var ajTCol = SupportMetricsHelper.numToLetter(UsrHeader["Adj Tickets"]);
+            var ajCCol = SupportMetricsHelper.numToLetter(UsrHeader["Adj Calls"]);
+            var TpDCol = SupportMetricsHelper.numToLetter(UsrHeader["Tickets/Day"]);
+            var CpDCol = SupportMetricsHelper.numToLetter(UsrHeader["Calls/Day"]);
             int rank = 0;
-            int startRow = row - reps.Count - 4;
-            int endRow = row - 5;
 
 
-            worksheet.Cells[row + rank, 2].Formula2 = $"=INDEX(SORTBY(A{startRow}:A{endRow}, D{startRow}:D{endRow}, -1), SEQUENCE({rankCount},1,1,1))";
-            worksheet.Cells[row + rank, 6].Formula2 = $"=INDEX(SORTBY(A{startRow}:A{endRow}, I{startRow}:I{endRow}, 1), SEQUENCE({rankCount},1,1,1))";
             foreach (Rep rep in reps.Take(rankCount))
             {
+                //// Value =LARGE(D9:D23, 10)
+                //worksheet.Cells[row + rank, 3].Formula =
+                //    $"=LARGE({ajTCol}{startRow}:{ajTCol}{endRow}, A{row + rank})";
 
-                // Value =LARGE(D9:D23, 10)
-                worksheet.Cells[row + rank, 3].Formula =
-                    $"=LARGE(D{startRow}:D{endRow}, A{row + rank})";
+                //// Value =SMALL(I9:I23, 10)
+                //worksheet.Cells[row + rank, 7].Formula =
+                //    $"=SMALL({ajCCol}{startRow}:{ajCCol}{endRow}, A{row + rank})";
 
-                // Value =SMALL(I9:I23, 10)
-                worksheet.Cells[row + rank, 7].Formula =
-                    $"=SMALL(I{startRow}:I{endRow}, A{row + rank})";
                 ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
                 rank++;
             }
 
 
+            // Adjusted Tickets
             rank = 0;
-            foreach (Rep user in adjCalls.Take(rankCount))
+            foreach (Rep user in adjTickets.Take(rankCount))
             {
-                if (user.Name == "-- AVERAGE --") worksheet.Range["D" + (row + rank), "E" + (row + rank)].Font.Bold = true;
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgHeader["Adj Tickets"],
+                    user.LastInitial(),
+                    user.AdjustedTickets(),
+                    rank
+                );
 
-
-                worksheet.Cells[row + rank, 4] = user.LastInitial();
-                worksheet.Cells[row + rank, 5] = user.AdjustedCalls();
                 ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
                 rank++;
             }
 
+
+            // Tickets/Day
             rank = 0;
-            foreach (Rep user in avgCallTime.Take(rankCount))
-            {
-                if (user.Name == "-- AVERAGE --") worksheet.Range["H" + (row + rank), "I" + (row + rank)].Font.Bold = true;
-
-                worksheet.Cells[row + rank, 8] = user.LastInitial();
-                worksheet.Cells[row + rank, 9] = user.FormattedDuration(Convert.ToInt32(user.AverageDuration()));
-                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
-                rank++;
-            }
-
-            rank = 0;
-            foreach (Rep user in totalPhoneTime.Take(rankCount))
-            {
-                if (user.Name == "-- AVERAGE --") worksheet.Range["J" + (row + rank), "K" + (row + rank)].Font.Bold = true;
-
-                worksheet.Cells[row + rank, 10] = user.LastInitial();
-                worksheet.Cells[row + rank, 11] = user.FormattedDuration(user.TotalDuration);
-                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
-                rank++;
-            }
-
-            rank = 0;
-            foreach (Rep user in callsOver30Percent.Take(rankCount))
-            {
-                if (user.Name == "-- AVERAGE --") worksheet.Range["L" + (row + rank), "M" + (row + rank)].Font.Bold = true;
-
-                worksheet.Cells[row + rank, 12] = user.LastInitial();
-                worksheet.Cells[row + rank, 13] = user.Over30Percentage();
-                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
-                rank++;
-            }
-
-            rank = 0;
-            foreach (Rep user in callsOver60Percent.Take(rankCount))
-            {
-                if (user.Name == "-- AVERAGE --") worksheet.Range["N" + (row + rank), "O" + (row + rank)].Font.Bold = true;
-
-                worksheet.Cells[row + rank, 14] = user.LastInitial();
-                worksheet.Cells[row + rank, 15] = user.Over60Percentage();
-                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
-                rank++;
-            }
-
-            rank = 0;
-            worksheet.Cells[row + rank, 16].Formula2 = $"=INDEX(SORTBY(A{startRow}:A{endRow}, Q{startRow}:Q{endRow}, -1), SEQUENCE({rankCount},1,1,1))";
+            worksheet.Cells[row + rank, AvgHeader["Tickets/Day"]].Formula2 = $"=INDEX(SORTBY(A{startRow}:A{endRow}, {TpDCol}{startRow}:{TpDCol}{endRow}, -1), SEQUENCE({rankCount},1,1,1))";
             foreach (Rep user in reps.Take(rankCount))
             {
                 // Tickets/Day
                 // NAME =INDEX(SORTBY(A9:A28, Q9:Q28, -1), SEQUENCE(20,1,1,1))
 
-                worksheet.Cells[row + rank, 17].Formula =
-                   $"=LARGE(Q{startRow}:Q{endRow}, A{row + rank})";
+                worksheet.Cells[row + rank, AvgHeader["Tickets/Day"] + 1].Formula =
+                   $"=LARGE({TpDCol}{startRow}:{TpDCol}{endRow}, A{row + rank})";
 
                 ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
                 rank++;
             }
 
+
+            // Adjusted Calls
             rank = 0;
-            worksheet.Cells[row + rank, 18].Formula2 = $"=INDEX(SORTBY(A{startRow}:A{endRow}, R{startRow}:R{endRow}, -1), SEQUENCE({rankCount},1,1,1))";
+            foreach (Rep user in adjCalls.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgHeader["Adj Calls"],
+                    user.LastInitial(),
+                    user.AdjustedCalls(),
+                    rank
+                );
+
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+
+            // Calls/Day
+            rank = 0;
+            worksheet.Cells[row + rank, AvgHeader["Calls/Day"]].Formula2 = $"=INDEX(SORTBY(A{startRow}:A{endRow}, {CpDCol}{startRow}:{CpDCol}{endRow}, -1), SEQUENCE({rankCount},1,1,1))";
             foreach (Rep user in reps.Take(rankCount))
             {
                 // Calls/Day
@@ -557,8 +522,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
                 //$"=INDEX(A{9}:A{9 + genReps.Count - 1}, MATCH(LARGE(R{9}:R{9 + genReps.Count - 1}, A{row + rank}), R{9}:R{9 + genReps.Count - 1}, 0))";
 
 
-                worksheet.Cells[row + rank, 19].Formula =
-                   $"=LARGE(R{startRow}:R{endRow}, A{row + rank})";
+                worksheet.Cells[row + rank, AvgHeader["Calls/Day"] + 1].Formula =
+                   $"=LARGE({CpDCol}{startRow}:{CpDCol}{endRow}, A{row + rank})";
 
                 //worksheet.Cells[row + rank, 18].Formula = $"=IF(H{9 + rank}/(F1-P{9 + rank})>1,ROUND(H{9 + rank}/(F1-Q{9 + rank}),0),0)";
                 //worksheet.Cells[row + rank, 19].Formula = $"=IF(H{9 + rank}/(F1-P{9 + rank})>1,ROUND(H{9 + rank}/(F1-R{9 + rank}),0),0)";
@@ -567,11 +532,587 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
                 rank++;
             }
 
+
+            // Calls/Tickets
+            rank = 0;
+            foreach (Rep user in callsToTickets.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgHeader["Calls/Tickets"],
+                    user.LastInitial(),
+                    user.CallsToTicketsRatio(),
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+
+            // Avg Call Time
+            rank = 0;
+            foreach (Rep user in avgCallTime.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgHeader["Avg Call Time"],
+                    user.LastInitial(),
+                    user.FormattedDuration(Convert.ToInt32(user.AverageDuration())),
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+
+            // Total Phone Time
+            rank = 0;
+            foreach (Rep user in totalPhoneTime.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgHeader["Total Ph Time"],
+                    user.LastInitial(),
+                    user.FormattedDuration(user.TotalDuration),
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+
+            // Calls > 30m %
+            rank = 0;
+            foreach (Rep user in callsOver30Percent.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgHeader["> 30%"],
+                    user.LastInitial(),
+                    user.Over30Percentage(),
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+
+            // Calls > 60m %
+            rank = 0;
+            foreach (Rep user in callsOver60Percent.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgHeader["> 60%"],
+                    user.LastInitial(),
+                    user.Over60Percentage(),
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+
             worksheet = FormatLineupTable(worksheet, row, rankCount);
-            newRow = row + rankCount;
+            newRow = row + rankCount + 1;
+            reps.Remove(averageRep);
             return worksheet;
         }
 
+        private Worksheet AddInboundAverageMetrics(List<Rep> reps, Worksheet worksheet, int row, out int newRow)
+        {
+            worksheet = HeaderHelper.WriteTwoSidedHeader(worksheet, "Inbound Averages", row, AvgTypeHeader, "Inbound");
+            row += 2;
+
+            var averageRep = SupportMetricsHelper.CreateAverageUser(reps);
+            reps.Insert(0, averageRep);
+            var genCount = reps.Count;
+
+            // setup sorted lists
+            List<Rep> calls = reps.OrderByDescending(u => u.InboundCalls).ToList();
+            List<Rep> avgCallTime = reps.OrderBy(u => u.AverageInboundDuration()).ToList();
+            List<Rep> totalPhoneTime = reps.OrderByDescending(u => u.InboundDuration).ToList();
+
+            List<Rep> inboundOver30 = reps.OrderBy(u => u.InboundCallsOver30).ToList();
+            List<Rep> inboundOver60 = reps.OrderBy(u => u.InboundCallsOver60).ToList();
+
+            List<Rep> callsOver30Percent = reps.OrderBy(u => u.InboundOver30Percentage()).ToList();
+            List<Rep> callsOver60Percent = reps.OrderBy(u => u.InboundOver60Percentage()).ToList();
+
+            int startRow = GeneralTableStart;
+            int endRow = GeneralTableEnd;
+            var iCCol = SupportMetricsHelper.numToLetter(UsrHeader["Inbound Calls"]);
+            var abCol = SupportMetricsHelper.numToLetter(UsrHeader["Absences"]);
+            //var CpDCol = SupportMetricsHelper.numToLetter(UHeader["Calls/Day"]);
+            var wdCol = SupportMetricsHelper.numToLetter(2);
+            int rank = 0;
+
+            // write
+            // Total Inbound Calls
+            rank = 0;
+            foreach (Rep user in calls.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["Calls"],
+                    user.LastInitial(),
+                    user.InboundCalls,
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+
+            worksheet.Cells[row, AvgTypeHeader["Calls/Day"]].Formula2 =
+                $"=INDEX(SORTBY(CHOOSE(" + "{1,2}" + $",A{startRow}:A{endRow},FLOOR(IFERROR({iCCol}{startRow}:{iCCol}{endRow}/({wdCol}{WorkdaysRow}-{abCol}{startRow}:{abCol}{endRow}),0),1)),FLOOR(IFERROR({iCCol}{startRow}:{iCCol}{endRow}/({wdCol}{WorkdaysRow}-{abCol}{startRow}:{abCol}{endRow}),0),1),-1),SEQUENCE({rankCount})," + "{1,2})";
+
+            //worksheet.Cells[row, AvgTypeHeader["Calls/Day"]].Formula = $"=LET(names,A{startRow}:A{endRow},calls,{clCol}{startRow}:{clCol}{endRow},absences,{abCol}{startRow}:{abCol}{endRow},workdays,$F$1,metric,IFERROR(calls/(workdays-absences),0),sorted,SORTBY(HSTACK(names,metric),metric,-1),TAKE(sorted,100))";
+
+            rank = 0;
+            //worksheet.Cells[row + rank, AvgTypeHeader["Calls/Day"]].Formula2 = $"=INDEX(SORTBY(A{startRow}:A{endRow}, {CpDCol}{startRow}:{CpDCol}{endRow}, -1), SEQUENCE({rankCount},1,1,1))";
+            //foreach (Rep user in reps.Take(rankCount))
+            //{
+            //    worksheet.Cells[row + rank, AvgTypeHeader["Calls/Day"] + 1].Formula =
+            //       $"=LARGE({CpDCol}{startRow}:{CpDCol}{endRow}, A{row + rank})";
+
+            //    ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+            //    rank++;
+            //}
+
+            // Avg Call Time
+            rank = 0;
+            foreach (Rep user in avgCallTime.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["Avg Call Time"],
+                    user.LastInitial(),
+                    user.FormattedDuration(Convert.ToInt32(user.AverageInboundDuration())),
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+            // Total Phone Time
+            rank = 0;
+            foreach (Rep user in totalPhoneTime.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["Total Ph Time"],
+                    user.LastInitial(),
+                    user.FormattedDuration(user.InboundDuration),
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+            // Calls > 30m
+            rank = 0;
+            foreach (Rep user in inboundOver30.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["Calls > 30m"],
+                    user.LastInitial(),
+                    user.InboundCallsOver30,
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+            // Calls > 30m %
+            rank = 0;
+            foreach (Rep user in callsOver30Percent.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["> 30%"],
+                    user.LastInitial(),
+                    user.InboundOver30Percentage(),
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+            // Calls > 60m
+            rank = 0;
+            foreach (Rep user in callsOver60Percent.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["Calls > 1h"],
+                    user.LastInitial(),
+                    user.InboundCallsOver60,
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+            // Calls > 60m %
+            rank = 0;
+            foreach (Rep user in callsOver60Percent.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["> 60%"],
+                    user.LastInitial(),
+                    user.InboundOver60Percentage(),
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+            worksheet = FormatLineupTable(worksheet, row, rankCount);
+            newRow = row + rankCount + 1;
+            reps.Remove(averageRep);
+            return worksheet;
+
+        }
+
+        private Worksheet AddOutboundAverageMetrics(List<Rep> reps, Worksheet worksheet, int row, out int newRow)
+        {
+            worksheet = HeaderHelper.WriteTwoSidedHeader(worksheet, "Outbound Averages", row, AvgTypeHeader, "Outbound");
+            row += 2;
+
+            var averageRep = SupportMetricsHelper.CreateAverageUser(reps);
+            reps.Insert(0, averageRep);
+            var genCount = reps.Count;
+
+            // setup sorted lists
+            List<Rep> calls = reps.OrderByDescending(u => u.OutboundCalls).ToList();
+            List<Rep> avgCallTime = reps.OrderBy(u => u.AverageOutboundDuration()).ToList();
+            List<Rep> totalPhoneTime = reps.OrderByDescending(u => u.OutboundDuration).ToList();
+
+            List<Rep> callsOver30Percent = reps.OrderBy(u => u.OutboundOver30Percentage()).ToList();
+            List<Rep> callsOver60Percent = reps.OrderBy(u => u.OutboundOver60Percentage()).ToList();
+
+            int startRow = GeneralTableStart; 
+            int endRow = GeneralTableEnd;
+            var iCCol = SupportMetricsHelper.numToLetter(UsrHeader["Outbound Calls"]);
+            var abCol = SupportMetricsHelper.numToLetter(UsrHeader["Absences"]);
+            var wdCol = SupportMetricsHelper.numToLetter(2);
+            int rank = 0;
+
+            // write
+            // Calls/Day
+            rank = 0;
+            worksheet.Cells[row, AvgTypeHeader["Calls/Day"]].Formula2 =
+                $"=INDEX(SORTBY(CHOOSE(" + "{1,2}" + $",A{startRow}:A{endRow},FLOOR(IFERROR({iCCol}{startRow}:{iCCol}{endRow}/({wdCol}{WorkdaysRow}-{abCol}{startRow}:{abCol}{endRow}),0),1)),FLOOR(IFERROR({iCCol}{startRow}:{iCCol}{endRow}/({wdCol}{WorkdaysRow}-{abCol}{startRow}:{abCol}{endRow}),0),1),-1),SEQUENCE({rankCount})," + "{1,2})";
+
+            // Total Outbound Calls
+            rank = 0;
+            foreach (Rep user in calls.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["Calls"],
+                    user.LastInitial(),
+                    user.OutboundCalls,
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+            // Avg Call Time
+            rank = 0;
+            foreach (Rep user in avgCallTime.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["Avg Call Time"],
+                    user.LastInitial(),
+                    user.FormattedDuration(Convert.ToInt32(user.AverageOutboundDuration())),
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+            // Total Phone Time
+            rank = 0;
+            foreach (Rep user in totalPhoneTime.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["Total Ph Time"],
+                    user.LastInitial(),
+                    user.FormattedDuration(user.OutboundDuration),
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+            // Calls > 30m
+            rank = 0;
+            foreach (Rep user in callsOver60Percent.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["Calls > 30m"],
+                    user.LastInitial(),
+                    user.OutboundCallsOver30,
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+            // Calls > 30m %
+            rank = 0;
+            foreach (Rep user in callsOver30Percent.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["> 30%"],
+                    user.LastInitial(),
+                    user.OutboundOver30Percentage(),
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+            // Calls > 60m
+            rank = 0;
+            foreach (Rep user in callsOver60Percent.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["Calls > 1h"],
+                    user.LastInitial(),
+                    user.OutboundCallsOver60,
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+            // Calls > 60m %
+            rank = 0;
+            foreach (Rep user in callsOver60Percent.Take(rankCount))
+            {
+                TableHelper.WriteTwoSidedTable(worksheet, row,
+                    AvgTypeHeader["> 60%"],
+                    user.LastInitial(),
+                    user.OutboundOver60Percentage(),
+                    rank
+                );
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+                rank++;
+            }
+
+
+            worksheet = FormatLineupTable(worksheet, row, rankCount);
+            newRow = row + rankCount + 1;
+            reps.Remove(averageRep);
+            return worksheet;
+        }
+
+
+        ////// Teams Tables
+        private Worksheet AddTeamsOverview(List<Team> teams, Worksheet worksheet, int row, out int newRow, int offset = 0)
+        {
+            // determin Columns
+            var stCol = SupportMetricsHelper.numToLetter(offset + 1);
+            var edCol = SupportMetricsHelper.numToLetter(offset + TeamRefTable.Count + 1);
+            var wdCol = SupportMetricsHelper.numToLetter(WorkdaysCol);
+            var iCol = SupportMetricsHelper.numToLetter(offset + TeamRefTable["Inbound Calls"]);
+            var oCol = SupportMetricsHelper.numToLetter(offset + TeamRefTable["Outbound Calls"]);
+            var aCol = SupportMetricsHelper.numToLetter(offset + TeamRefTable["Absences"]);
+
+
+            // Add Header
+            worksheet.Cells[row, offset + 1] = "Team";
+
+            worksheet.Cells[row, offset + 2] = "Adj Tickets";
+            worksheet.Cells[row, offset + 2].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+
+            worksheet.Cells[row, offset + 3] = "/Day";
+            worksheet.Cells[row, offset + 3].HorizontalAlignment = XlHAlign.xlHAlignLeft;
+
+            worksheet.Cells[row, offset + 4] = "Inbound Calls";
+            worksheet.Cells[row, offset + 4].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+
+            worksheet.Cells[row, offset + 5] = "/Day";
+            worksheet.Cells[row, offset + 5].HorizontalAlignment = XlHAlign.xlHAlignLeft;
+
+            worksheet.Cells[row, offset + 6] = "Outbound Calls";
+            worksheet.Cells[row, offset + 6].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+
+            worksheet.Cells[row, offset + 7] = "/Day";
+            worksheet.Cells[row, offset + 7].HorizontalAlignment = XlHAlign.xlHAlignLeft;
+
+            worksheet.Cells[row, offset + 8] = "Adj Calls";
+            worksheet.Cells[row, offset + 8].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+
+            worksheet.Cells[row, offset + 9] = "/Day";
+            worksheet.Cells[row, offset + 9].HorizontalAlignment = XlHAlign.xlHAlignLeft;
+
+            worksheet.Cells[row, offset + 10] = "Avg Call Time";
+            worksheet.Cells[row, offset + 10].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+
+            worksheet.Cells[row, offset + 12] = "Absences";
+            worksheet.Cells[row, offset + 12].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+
+            worksheet.Range[$"{stCol}{row}", $"{edCol}{row}"].Font.Bold = true;
+            worksheet.Range[$"{stCol}{row}", $"{edCol}{row}"].Interior.Color = XlRgbColor.rgbLightSteelBlue;
+            worksheet.Range[$"{stCol}{row}", $"{edCol}{row}"].Borders[XlBordersIndex.xlEdgeBottom].LineStyle = XlLineStyle.xlContinuous;
+            worksheet.Cells[row, offset + 1].Borders[XlBordersIndex.xlEdgeLeft].LineStyle = XlLineStyle.xlContinuous;
+
+            row++;
+
+            // write content
+            foreach (var teamRef in TeamsTableReference)
+            {
+                worksheet.Cells[row, offset + 1] = teamRef.Key;
+
+                var ttCol = SupportMetricsHelper.numToLetter(UsrHeader["Adj Tickets"]);
+                worksheet.Cells[row, offset + TeamRefTable["Adj Tickets"]].Formula = $"={ttCol}{teamRef.Value}";
+                worksheet.Cells[row, offset + TeamRefTable["Adj Tickets"]].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+
+                var tpdCol = SupportMetricsHelper.numToLetter(UsrHeader["Tickets/Day"]);
+                worksheet.Cells[row, offset + TeamRefTable["Tickets/Day"]].Formula = $"={tpdCol}{teamRef.Value}";
+                worksheet.Cells[row, offset + TeamRefTable["Tickets/Day"]].HorizontalAlignment = XlHAlign.xlHAlignLeft;
+
+                var icCol = SupportMetricsHelper.numToLetter(UsrHeader["Inbound Calls"]);
+                worksheet.Cells[row, offset + TeamRefTable["Inbound Calls"]].Formula = $"={icCol}{teamRef.Value}";
+                worksheet.Cells[row, offset + TeamRefTable["Inbound Calls"]].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+
+                var ocCol = SupportMetricsHelper.numToLetter(UsrHeader["Outbound Calls"]);
+                worksheet.Cells[row, offset + TeamRefTable["Outbound Calls"]].Formula = $"={ocCol}{teamRef.Value}";
+                worksheet.Cells[row, offset + TeamRefTable["Outbound Calls"]].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+
+                var tcCol = SupportMetricsHelper.numToLetter(UsrHeader["Calls"]);
+                worksheet.Cells[row, offset + TeamRefTable["Calls"]].Formula = $"={tcCol}{teamRef.Value}";
+                worksheet.Cells[row, offset + TeamRefTable["Calls"]].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+
+                var tcpdCol = SupportMetricsHelper.numToLetter(UsrHeader["Calls/Day"]);
+                worksheet.Cells[row, offset + TeamRefTable["Calls/Day"]].Formula = $"={tcpdCol}{teamRef.Value}";
+                worksheet.Cells[row, offset + TeamRefTable["Calls/Day"]].HorizontalAlignment = XlHAlign.xlHAlignLeft;
+
+                var actCol = SupportMetricsHelper.numToLetter(UsrHeader["Avg Call Time"]);
+                worksheet.Cells[row, offset + TeamRefTable["Avg Call Time"]].Formula = $"={actCol}{teamRef.Value}";
+                worksheet.Cells[row, offset + TeamRefTable["Avg Call Time"]].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+
+                var abCol = SupportMetricsHelper.numToLetter(UsrHeader["Absences"]);
+                worksheet.Cells[row, offset + TeamRefTable["Absences"]].Formula = $"={abCol}{teamRef.Value}";
+                worksheet.Cells[row, offset + TeamRefTable["Absences"]].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+
+
+                // =FLOOR(IFERROR(G3/(B9-N3),0),1)
+                worksheet.Cells[row, offset + TeamRefTable["Inbound Calls/Day"]].Formula = 
+                    $"=FLOOR(IFERROR({iCol}{row}/({wdCol}{WorkdaysRow}-{aCol}{row}),0),1)";
+                worksheet.Cells[row, offset + TeamRefTable["Inbound Calls/Day"]].HorizontalAlignment = XlHAlign.xlHAlignLeft;
+
+                worksheet.Cells[row, offset + TeamRefTable["Outbound Calls/Day"]].Formula = 
+                    $"=FLOOR(IFERROR({oCol}{row}/({wdCol}{WorkdaysRow}-{aCol}{row}),0),1)";
+                worksheet.Cells[row, offset + TeamRefTable["Outbound Calls/Day"]].HorizontalAlignment = XlHAlign.xlHAlignLeft;
+
+
+                // add bottom border if avg in name
+                if (teamRef.Key.Contains("Avg"))
+                {
+                    
+                    worksheet.Range[$"{stCol}{row}", $"{edCol}{row}"].Borders[XlBordersIndex.xlEdgeBottom].LineStyle = XlLineStyle.xlContinuous;
+                }
+
+                // always border left
+                worksheet.Cells[row, offset + 1].Borders[XlBordersIndex.xlEdgeLeft].LineStyle = XlLineStyle.xlContinuous;
+
+                // alternate row colors with smoke
+                if (row % 2 == 0)
+                {
+                    worksheet.Range[stCol + (row), edCol + (row)].Interior.Color = XlRgbColor.rgbWhiteSmoke;
+                }
+
+                row ++;
+            }
+
+            newRow = row;
+            return worksheet;
+        }
+
+        private Worksheet AddEachTeamsMetrics(List<Rep> reps, Worksheet worksheet, int row, out int newRow)
+        {
+            foreach (var team in Settings.Teams)
+            {
+                if (team.Members.Count == 0)
+                    continue;
+
+                // skip team if not enabled for teams table
+                if (team.IncludeInMetrics == false)
+                    continue;
+
+                // note not included if not included
+                worksheet.Cells[row, 2] = team.IsExcluded ? "Is Excluded From Metrics" : "";
+                worksheet.Cells[row, 2].HorizontalAlignment = XlHAlign.xlHAlignLeft;
+                worksheet.Cells[row, 2].Font.Italic = true;
+                worksheet.Cells[row, 2].Font.Size = 11;
+               
+                // add the rep header
+                worksheet = HeaderHelper.WriteOneSidedHeader(worksheet, row, team.Name, UsrHeader);
+                row+=2;
+
+                // get the genReps for this team
+                List<Rep> teamReps = new();
+                foreach (var repName in team.Members)
+                {
+                    var rep = reps.FirstOrDefault(r => r.Name == repName);
+                    if (rep != null)
+                    {
+                        teamReps.Add(rep);
+                    }
+                    else
+                    {
+                        var newRep = new Rep();
+                        newRep.Name = repName;
+                        teamReps.Add(newRep);
+                    }
+                }
+
+                worksheet = WriteTotalUser(worksheet, row, teamReps);
+                if (!team.IsExcluded) TeamsTableReference.Add("Total " + team.Name, row);
+                row++;
+
+                worksheet = WriteAverageUser(worksheet, row, teamReps);
+                if (!team.IsExcluded) TeamsTableReference.Add("Avg " + team.Name, row);
+                row++;
+
+                foreach (var rep in teamReps)
+                {
+                    worksheet = WriteUserMetrics(rep, worksheet, row);
+
+                    // add absence cell reference back to general table
+                    if (GeneralTableReference.ContainsKey(rep.Name))
+                    {
+                        var abCol = SupportMetricsHelper.numToLetter(UsrHeader["Absences"]);
+                        worksheet.Cells[row, UsrHeader["Absences"]].Formula = $"={abCol}{GeneralTableReference[rep.Name]}";
+                    }
+
+                    row++;
+                }
+                row++;
+
+                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
+            }
+
+            newRow = row;
+            return worksheet;
+        }
+
+
+        ///////// formatting
         private Worksheet FormatLineupTable(Worksheet worksheet, int row, int rankCount)
         {
             // format the rank table
@@ -594,269 +1135,13 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             return worksheet;
         }
 
-
-        ////// Teams Tables
-        private Worksheet AddTeamHeader(Worksheet worksheet, int row)
-        {
-            worksheet.Cells[row, 1] = "Name"; 
-            worksheet.Cells[row, 2] = "Tickets";
-            worksheet.Cells[row, 3] = "Wkd Tickets";
-            worksheet.Cells[row, 4] = "Adj Tickets";
-            worksheet.Cells[row, 5] = "Calls ↓"; // list is sorted
-            worksheet.Cells[row, 6] = "Wkd Calls";
-            worksheet.Cells[row, 7] = "Internal Calls";
-            worksheet.Cells[row, 8] = "Adj Calls";
-            worksheet.Cells[row, 9] = "Calls/Tickets";
-            worksheet.Cells[row, 10] = "Avg Call Time";
-            worksheet.Cells[row, 11] = "Total Ph Time";
-            worksheet.Cells[row, 12] = "Calls > 30m";
-            worksheet.Cells[row, 13] = "> 30%";
-            worksheet.Cells[row, 14] = "Calls > 1h";
-            worksheet.Cells[row, 15] = "> 1h%";
-            worksheet.Cells[row, 16] = "Absences";
-            worksheet.Cells[row, 17] = "Tickets/Day";
-            worksheet.Cells[row, 18] = "Calls/Day";
-            worksheet.Cells[row, 20] = "Notes";
-
-
-            // format header row
-            worksheet.Range[$"A{row}", $"T{row}"].Font.Bold = true;
-
-            // Make the background color of the header light blue
-            worksheet.Range[$"A{row}", $"T{row}"].Interior.Color = XlRgbColor.rgbLightSteelBlue;
-
-            // add bottom border to this header
-            worksheet.Range["A" + row, "T" + row].Borders[XlBordersIndex.xlEdgeBottom].LineStyle = XlLineStyle.xlContinuous;
-
-            // left aligh the name cell
-            worksheet.Cells[row, 1].HorizontalAlignment = XlHAlign.xlHAlignLeft;
-
-            // center align rest of header row
-            worksheet.Range["B" + row, "T" + row].HorizontalAlignment = XlHAlign.xlHAlignCenter;
-
-            // freeze the header row
-            worksheet.Application.ActiveWindow.SplitRow = 1;
-            worksheet.Application.ActiveWindow.FreezePanes = true;
-
-            return worksheet;
-        }
-
-        private Worksheet AddEachTeamsMetrics(List<Rep> reps, Worksheet worksheet, int row)
-        {
-            foreach (var team in Settings.Teams)
-            {
-                if (team.Members.Count == 0)
-                    continue;
-
-                // skip team if not enabled for teams table
-                if (team.IncludeInMetrics == false)
-                    continue;
-
-                // add team name as header
-                worksheet.Cells[row, 1] = team.Name;
-                worksheet.Cells[row, 1].Font.Bold = true;
-                worksheet.Cells[row, 1].Font.Size = 14;
-                worksheet.Cells[row, 1].Interior.Color = (int)XlRgbColor.rgbLightSteelBlue;
-               
-                row++;
-
-                // add the rep header
-                worksheet = AddTeamHeader(worksheet, row);
-                row++;
-
-                var tRow = row;
-                var aRow = tRow + 1;
-
-                // get the genReps for this team
-                List<Rep> teamReps = new();
-                foreach (var repName in team.Members)
-                {
-                    var rep = reps.FirstOrDefault(r => r.Name == repName);
-                    if (rep != null)
-                    {
-                        if (rep.TotalCalls > 0)
-                            teamReps.Add(rep);
-                    }
-                }
-
-                // create average and total genReps for this team
-                var teamAverageRep = CreateAverageUser(teamReps);
-                var teamTotalRep = CreateTotalUser(teamReps);
-
-                // sort then add total then average rep to the front
-                teamReps = teamReps.OrderByDescending(u => u.TotalCalls).ToList();
-                var teamCount = teamReps.Count;
-
-                teamReps.Insert(0, teamTotalRep);
-                teamReps.Insert(1, teamAverageRep);
-
-                foreach (var user in teamReps)
-                {
-                    worksheet = AddUserMetrics(user, worksheet, row);
-
-                    // reference B{row} & C{row} from second table for ticket counts
-                    if (TicketsFormulaSourceRows.ContainsKey(user.Name))
-                    {
-                        int sourceRow = TicketsFormulaSourceRows[user.Name];
-                        worksheet.Cells[row, 2].Formula = "=B" + sourceRow;
-                        worksheet.Cells[row, 3].Formula = "=C" + sourceRow;
-                        worksheet.Cells[row, 16].Formula = "=P" + sourceRow;
-                    }
-
-                    row++;
-                }
-                row++;
-
-                // override average and total rep formula for this team only.
-                // setup Total and Average users Ticket Formula
-
-                var startRow = row - teamCount - 1;
-                var endRow = row - 2;
-                
-                // Total
-                worksheet.Cells[tRow, 2].Formula = $"=SUM(B{startRow}:B{endRow})";
-                worksheet.Cells[tRow, 3].Formula = $"=SUM(C{startRow}:C{endRow})";
-                worksheet.Cells[tRow, 16].Formula = $"=SUM(P{startRow}:P{endRow})";
-
-                // Average
-                worksheet.Cells[aRow, 2].Formula = $"=IF(SUM(B{startRow}:B{endRow})<=0,0,ROUND(AVERAGE(B{startRow}:B{endRow}),2))";
-                worksheet.Cells[aRow, 3].Formula = $"=IF(SUM(C{startRow}:C{endRow})<=0,0,ROUND(AVERAGE(C{startRow}:C{endRow}),2))";
-                worksheet.Cells[aRow, 16].Formula = $"=IF(SUM(P{startRow}:P{endRow})<=0,0,ROUND(AVERAGE(P{startRow}:P{endRow}),2))";
-
-
-                ProgressChanged?.Invoke(this, (int)(currentProgress += percentageStep));
-            }
-            return worksheet;
-        }
-
-
-        ///////// formatting and helpers
-        private Rep CreateTotalUser(List<Rep> reps)
-        {
-            Rep totalUser = new Rep();
-
-            // add all the call records to the total rep
-            totalUser.Name = "-- TOTAL --";
-
-            // get the average metrics
-            int totalCalls = 0;
-            int inboundCalls = 0;
-            int outboundCalls = 0;
-
-            int totalPhoneTime = 0;
-            int inboundPhoneTime = 0;
-            int outboundPhoneTime = 0;
-
-            int callsOver30 = 0;
-            int callsOver60 = 0;
-
-            int WeekendCalls = 0;
-            int InternalCalls = 0;
-
-            foreach (var rep in reps)
-            {
-                if (rep.Name == "-- AVERAGE --") continue; // skip the average rep
-                if (rep.Name == "-- TOTAL --") continue; // skip the total rep
-
-                // add total calls
-                totalCalls += rep.TotalCalls;
-                inboundCalls += rep.InboundCalls;
-                outboundCalls += rep.OutboundCalls;
-
-                // add timing
-                totalPhoneTime += rep.TotalDuration;
-                inboundPhoneTime += rep.InboundDuration;
-                outboundPhoneTime += rep.OutboundDuration;
-
-                // add calls over 30 and 60 minutes
-                callsOver30 += rep.CallsOver30;
-                callsOver60 += rep.CallsOver60;
-
-                InternalCalls += rep.InternalCalls;
-                WeekendCalls += rep.WeekendCalls;
-            }
-
-            // set the Total rep metrics
-
-            totalUser.TotalCalls = totalCalls;
-            totalUser.InboundCalls = inboundCalls;
-            totalUser.OutboundCalls = outboundCalls;
-
-            totalUser.TotalDuration = totalPhoneTime;
-            totalUser.InboundDuration = inboundPhoneTime;
-            totalUser.OutboundDuration = outboundPhoneTime;
-
-            totalUser.WeekendCalls = WeekendCalls;
-            totalUser.InternalCalls = InternalCalls;
-
-            totalUser.CallsOver30 = callsOver30;
-            totalUser.CallsOver60 = callsOver60;
-
-            return totalUser;
-        }
-
-        private Rep CreateAverageUser(List<Rep> reps)
-        {
-            // create new rep
-            Rep avgUser = new Rep();
-            avgUser.Name = "-- AVERAGE --";
-
-            // get the average metrics
-            int userCount = reps.Count;
-
-            if (userCount == 0)
-            {
-                Console.WriteLine("No genReps found");
-                return avgUser;
-            }
-
-            int totalCalls = 0;
-            int weekendCalls = 0;
-            int internalCalls = 0;
-            int adjustedCalls = 0;
-
-            int totalPhoneTime = 0;
-            int callsOver30 = 0;
-            int callsOver60 = 0;
-
-            // add from all genReps
-            foreach (var user in reps)
-            {
-                if (user.Name == "-- TOTAL --") continue; // skip the total rep
-                if (user.Name == "-- AVERAGE --") continue; // skip the average rep
-
-                // add total calls
-                totalCalls += user.TotalCalls;
-                weekendCalls += user.WeekendCalls;
-                internalCalls += user.InternalCalls;
-                adjustedCalls += user.AdjustedCalls();
-
-                // add timing
-                totalPhoneTime += user.TotalDuration;
-
-                // add calls over 30 and 60 minutes
-                callsOver30 += user.CallsOver30;
-                callsOver60 += user.CallsOver60;
-            }
-
-
-            avgUser.TotalCalls = totalCalls / userCount;
-            avgUser.WeekendCalls = weekendCalls / userCount;
-            avgUser.InternalCalls = internalCalls / userCount;
-            avgUser.TotalDuration = totalPhoneTime / userCount;
-            avgUser.CallsOver30 = callsOver30 / userCount;
-            avgUser.CallsOver60 = callsOver60 / userCount;
-
-            return avgUser;
-        }
-
         private Worksheet FormatWorksheet(Worksheet worksheet, int row, int rankCount)
         {
             // format columns to fit
             worksheet.Columns.AutoFit();
 
             // center align the entire sheet
-            worksheet.Range["B1", "T" + (row)].HorizontalAlignment = XlHAlign.xlHAlignCenter;
+            //worksheet.Range["B1", "T" + (row)].HorizontalAlignment = XlHAlign.xlHAlignCenter;
 
             // set the daterange column aligh left
             worksheet.Range["B1"].HorizontalAlignment = XlHAlign.xlHAlignLeft;
@@ -876,114 +1161,46 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             return worksheet;
         }
 
-        public static double CalculateProgressSteps(int repCount, int rankCount)
+        private Worksheet WriteTotalUser(Worksheet worksheet, int row, List<Rep> reps)
         {
-            // each row for average lineup table
-            var total = repCount += rankCount ; // 6 columns per rank
+            var totalUser = SupportMetricsHelper.CreateTotalUser(reps);
 
-            // each team table
-            foreach (var team in Settings.Teams)
-            {
-                if (team.Members.Count == 0)
-                    continue;
+            worksheet = WriteUserMetrics(totalUser, worksheet, row);
 
-                if (!team.IncludeInMetrics) continue; // skip ignored teams
-                total += team.Members.Count * 6;
-            }
+            int stRow = row + 2;
+            int edRow = row + reps.Count + 1;
+            var abCol = SupportMetricsHelper.numToLetter(UsrHeader["Absences"]);
+            var stCol = SupportMetricsHelper.numToLetter(1);
+            var edCol = SupportMetricsHelper.numToLetter(UsrHeader.Count);
 
-            return total / 120;
+            // =SUM(P10:P28)
+            worksheet.Cells[row, UsrHeader["Absences"]].Formula = $"=SUM({abCol}{stRow}:{abCol}{edRow})";
+
+            // format row
+            worksheet.Range[stCol + row, edCol + row].Font.Bold = true;
+
+            return worksheet;
         }
 
-
-        private string numToLetter(int num)
+        private Worksheet WriteAverageUser(Worksheet worksheet, int row, List<Rep> reps)
         {
-            string letter = "";
-            switch (num)
-            {
-                case 1:
-                    letter = "A";
-                    break;
-                case 2:
-                    letter = "B";
-                    break;
-                case 3:
-                    letter = "C";
-                    break;
-                case 4:
-                    letter = "D";
-                    break;
-                case 5:
-                    letter = "E";
-                    break;
-                case 6:
-                    letter = "F";
-                    break;
-                case 7:
-                    letter = "G";
-                    break;
-                case 8:
-                    letter = "H";
-                    break;
-                case 9:
-                    letter = "I";
-                    break;
-                case 10:
-                    letter = "J";
-                    break;
-                case 11:
-                    letter = "K";
-                    break;
-                case 12:
-                    letter = "L";
-                    break;
-                case 13:
-                    letter = "M";
-                    break;
-                case 14:
-                    letter = "N";
-                    break;
-                case 15:
-                    letter = "O";
-                    break;
-                case 16:
-                    letter = "P";
-                    break;
-                case 17:
-                    letter = "Q";
-                    break;
-                case 18:
-                    letter = "R";
-                    break;
-                case 19:
-                    letter = "S";
-                    break;
-                case 20:
-                    letter = "T";
-                    break;
-                case 21:
-                    letter = "U";
-                    break;
-                case 22:
-                    letter = "V";
-                    break;
-                case 23:
-                    letter = "W";
-                    break;
-                case 24:
-                    letter = "X";
-                    break;
-                case 25:
-                    letter = "Y";
-                    break;
-                case 26:
-                    letter = "Z";
-                    break;
-                default:
-                    letter = "A";
-                    break;
-            }
+            var avgUser = SupportMetricsHelper.CreateAverageUser(reps);
 
-            return letter;
+            worksheet = WriteUserMetrics(avgUser, worksheet, row);
+
+            int stRow = row + 1;
+            int edRow = row + reps.Count;
+            var abCol = SupportMetricsHelper.numToLetter(UsrHeader["Absences"]);
+            var stCol = SupportMetricsHelper.numToLetter(1);
+            var edCol = SupportMetricsHelper.numToLetter(UsrHeader.Count);
+
+            // =IF(SUM(P10:P28)<=0,0,ROUND(AVERAGE(P10:P28),2))
+            worksheet.Cells[row, UsrHeader["Absences"]].Formula = $"=IF(SUM({abCol}{stRow}:{abCol}{edRow})<=0,0,ROUND(AVERAGE({abCol}{stRow}:{abCol}{edRow}),2))";
+
+            // format row
+            worksheet.Range[stCol + row, edCol + row].Font.Bold = true;
+
+            return worksheet;
         }
     }
 }

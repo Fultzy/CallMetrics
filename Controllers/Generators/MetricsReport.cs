@@ -5,6 +5,8 @@ using Microsoft.Office.Interop.Excel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,9 +15,9 @@ namespace CallMetrics.Controllers.Generators
 {
     public class MetricsReport
     {
-        private Application excelApp;
-        private Workbook workbook;
-        private Worksheet worksheet;
+        private Application? excelApp = null;
+        private Workbook? workbook = null;
+        private Worksheet? worksheet = null;
 
         public event EventHandler<int> ReportProgressChanged;
 
@@ -23,30 +25,26 @@ namespace CallMetrics.Controllers.Generators
         {
             try
             {
-                var generator = new SupportRepMetrics();
+                using var generator = new SupportRepMetrics();
                 generator.ProgressChanged += (s, e) => ReportProgressChanged?.Invoke(this, e);
 
+                //CloseExcel();
                 excelApp = new Microsoft.Office.Interop.Excel.Application
                 {
-                    Visible = false,
+                    Visible = true,
                     DisplayAlerts = false
                 };
 
-                // setup and create file
+                //// setup and create file
                 string fileName = @"\SupportMetrics_" + UniqueTimeCode();
                 workbook = excelApp.Workbooks.Add(Type.Missing);
 
-                // remove reps with no calls and tickets
-                reps = reps.Where(r => r.TotalCalls > 0 && r.TotalTickets > 0).ToList();
-
-                // create support metrics report worksheet
+                //// create support metrics report worksheet
                 worksheet = (Worksheet)workbook.ActiveSheet;
                 worksheet = generator.Create(reps, worksheet);
 
-                // save the workbook
+                //// save the workbook
                 workbook.SaveAs(directoryPath + fileName + ".xlsx");
-                workbook.Close(false);
-                excelApp.Quit();
 
                 ReportProgressChanged.Invoke(this, 100);
 
@@ -61,19 +59,60 @@ namespace CallMetrics.Controllers.Generators
                 }
 
             }
-            catch (Exception ex)
+            catch 
             {
-                throw new Exception("Error generating report: " + ex.Message);
+                throw;
             }
             finally
             {
-                excelApp.Quit();
+                CloseExcel();
+            }
+        }
 
-                Marshal.ReleaseComObject(worksheet);
-                Marshal.ReleaseComObject(workbook);
-                Marshal.ReleaseComObject(excelApp);
+        private void CloseExcel()
+        {
+            try
+            {
+                if (worksheet != null)
+                {
+                    Marshal.FinalReleaseComObject(worksheet);
+                    worksheet = null;
+                }
 
-            }            
+                if (workbook != null)
+                {
+                    try
+                    {
+                        workbook.Close(false);
+                    }
+                    catch { }
+
+                    Marshal.FinalReleaseComObject(workbook);
+                    workbook = null;
+                }
+
+                if (excelApp != null)
+                {
+                    try
+                    {
+                        excelApp.Quit();
+                    }
+                    catch { }
+
+                    Marshal.FinalReleaseComObject(excelApp);
+                    excelApp = null;
+                }
+
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+            }
+            catch
+            {
+                throw;
+            }
+
         }
 
         private string UniqueTimeCode()

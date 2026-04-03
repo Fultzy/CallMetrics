@@ -41,9 +41,11 @@ namespace CallMetrics
 
             // set toggles based on settings
             TicketImportTypeToggle.IsChecked = Settings.TicketImportType == ImportType.Dynamics;
-            CallImportTypeToggle.IsChecked = Settings.CallImportType == ImportType.Five9;
+            CallImportTypeToggle.IsChecked = Settings.CallImportType == ImportType.Nextiva;
             CheckTicketImportType();
             CheckCallImportType();
+
+            VersionLabel.Content = "v1.2.2.1"; // oof
         }
 
         public void UpdateProgressBar(int value)
@@ -79,8 +81,6 @@ namespace CallMetrics
                     Notify(Notifications.ImportFail);
                     return;
                 }
-
-                
 
                 RepsDataGrid.ItemsSource = MetricsData.Reps;
                 RepsDataGrid.Items.Refresh();
@@ -237,13 +237,13 @@ namespace CallMetrics
             {
                 Settings.TicketImportType = ImportType.CallTracker;
                 ImportTicketsButton.Content = "Import CallTracker Tickets";
-                ImportTicketsButton.Background = new SolidColorBrush(Color.FromRgb(33, 150, 243));
+                ImportTicketsButton.Background = new SolidColorBrush(Color.FromRgb(10, 109, 187));
             }
             else
             {
                 Settings.TicketImportType = ImportType.Dynamics;
                 ImportTicketsButton.Content = "Import Dynamics Tickets";
-                ImportTicketsButton.Background = new SolidColorBrush(Color.FromRgb(10, 109, 187));
+                ImportTicketsButton.Background = new SolidColorBrush(Color.FromRgb(33, 150, 243));
             }
         }
 
@@ -263,15 +263,15 @@ namespace CallMetrics
         {
             if (CallImportTypeToggle.IsChecked == false)
             {
-                Settings.CallImportType = ImportType.Nextiva;
-                ImportCallsButton.Content = "Import Nextiva Calls";
-                ImportCallsButton.Background = new SolidColorBrush(Color.FromRgb(33, 150, 243));
-            }
-            else
-            {
                 Settings.CallImportType = ImportType.Five9;
                 ImportCallsButton.Content = "Import Five9 Calls";
                 ImportCallsButton.Background = new SolidColorBrush(Color.FromRgb(10, 109, 187));
+            }
+            else
+            {
+                Settings.CallImportType = ImportType.Nextiva;
+                ImportCallsButton.Content = "Import Nextiva Calls";
+                ImportCallsButton.Background = new SolidColorBrush(Color.FromRgb(33, 150, 243));
             }
         }
 
