@@ -10,6 +10,12 @@ namespace CallMetrics.Utilities
             Message = $"Your metrics report has been successfully generated!\n Saved to {Settings.DefaultReportPath}"
         };
 
+        public static Notification RefreshedDataGrid = new Notification
+        {
+            Title = "Data Refreshed",
+            Message = "The DataGrid has been refreshed"
+        };
+
         public static Notification ImportCallsComplete = new Notification
         {
             Title = "Import Complete",

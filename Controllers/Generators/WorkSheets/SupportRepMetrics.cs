@@ -164,7 +164,6 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
             /////////// Table 2 - User Metrics
             worksheet = AddGeneralTableMetrics(IncludedReps, worksheet, row, out row);
-            
 
             /////////// Table 3 - Average Lineup
             worksheet = AddAverageLineupMetrics(IncludedReps, worksheet, row, out row);
@@ -339,7 +338,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
                 if (team.IsDepartment)
                     worksheet.Cells[row, UsrHeader["Name"]] = rep.Name;
                 else
-                    worksheet.Cells[row, UsrHeader["Name"]] = rep.LastInitial();
+                    worksheet.Cells[row, UsrHeader["Name"]] = Formatter.LastInitial(rep.Name);
 
                 worksheet.Cells[row, UsrHeader["Tickets"]] = rep.TotalTickets;
                 worksheet.Cells[row, UsrHeader["Wkd Tickets"]] = rep.WeekendTickets;
@@ -352,13 +351,13 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
                 worksheet.Cells[row, UsrHeader["Adj Calls"]] = rep.AdjustedCalls();
 
                 worksheet.Cells[row, UsrHeader["Calls/Tickets"]] = rep.CallsToTicketsRatio();
-                worksheet.Cells[row, UsrHeader["Avg Call Time"]] = rep.FormattedDuration(Convert.ToInt32(rep.AverageDuration()));
-                worksheet.Cells[row, UsrHeader["Total Ph Time"]] = rep.FormattedDuration(rep.TotalDuration);
+                worksheet.Cells[row, UsrHeader["Avg Call Time"]] = Formatter.Duration(Convert.ToInt32(rep.AverageDuration()));
+                worksheet.Cells[row, UsrHeader["Total Ph Time"]] = Formatter.Duration(rep.TotalDuration);
 
                 worksheet.Cells[row, UsrHeader["Calls > 30m"]] = rep.CallsOver30;
-                worksheet.Cells[row, UsrHeader["> 30%"]] = rep.Over30Percentage();
+                worksheet.Cells[row, UsrHeader["> 30%"]] = rep.Over30Percentage() + "%";
                 worksheet.Cells[row, UsrHeader["Calls > 1h"]] = rep.CallsOver60;
-                worksheet.Cells[row, UsrHeader["> 60%"]] = rep.Over60Percentage();
+                worksheet.Cells[row, UsrHeader["> 60%"]] = rep.Over60Percentage() + "%";
 
                 worksheet.Cells[row, UsrHeader["Absences"]] = 0;
 
@@ -407,7 +406,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             }
             catch (Exception ex)
             {
-                throw new Exception("Error adding rep metrics for " + rep.Name + ": " + ex.Message);
+                var msg = Logger.ExceptionLog("Error adding rep metrics for " + rep.Name + ": " + ex.Message);
+                throw new Exception(msg);
             }
 
             return worksheet;
@@ -436,8 +436,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             List<Rep> avgCallTime = reps.OrderBy(u => u.AverageDuration()).ToList();
             List<Rep> totalPhoneTime = reps.OrderByDescending(u => u.TotalDuration).ToList();
 
-            List<Rep> callsOver30Percent = reps.OrderBy(u => u.Over30PercentFloat()).ToList();
-            List<Rep> callsOver60Percent = reps.OrderBy(u => u.Over60PercentFloat()).ToList();
+            List<Rep> callsOver30Percent = reps.OrderBy(u => u.Over30Percentage()).ToList();
+            List<Rep> callsOver60Percent = reps.OrderBy(u => u.Over60Percentage()).ToList();
 
             int startRow = GeneralTableStart;
             int endRow = GeneralTableEnd;
@@ -469,7 +469,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgHeader["Adj Tickets"],
-                    user.LastInitial(),
+                    Formatter.LastInitial(user.Name),
                     user.AdjustedTickets(),
                     rank
                 );
@@ -501,7 +501,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgHeader["Adj Calls"],
-                    user.LastInitial(),
+                    Formatter.LastInitial(user.Name),
                     user.AdjustedCalls(),
                     rank
                 );
@@ -539,7 +539,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgHeader["Calls/Tickets"],
-                    user.LastInitial(),
+                    Formatter.LastInitial(user.Name),
                     user.CallsToTicketsRatio(),
                     rank
                 );
@@ -555,8 +555,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgHeader["Avg Call Time"],
-                    user.LastInitial(),
-                    user.FormattedDuration(Convert.ToInt32(user.AverageDuration())),
+                    Formatter.LastInitial(user.Name),
+                    Formatter.Duration(Convert.ToInt32(user.AverageDuration())),
                     rank
                 );
 
@@ -571,8 +571,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgHeader["Total Ph Time"],
-                    user.LastInitial(),
-                    user.FormattedDuration(user.TotalDuration),
+                    Formatter.LastInitial(user.Name),
+                    Formatter.Duration(user.TotalDuration),
                     rank
                 );
 
@@ -587,8 +587,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgHeader["> 30%"],
-                    user.LastInitial(),
-                    user.Over30Percentage(),
+                    Formatter.LastInitial(user.Name),
+                    user.Over30Percentage() + "%",
                     rank
                 );
 
@@ -603,8 +603,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgHeader["> 60%"],
-                    user.LastInitial(),
-                    user.Over60Percentage(),
+                    Formatter.LastInitial(user.Name),
+                    user.Over60Percentage() + "%",
                     rank
                 );
 
@@ -654,7 +654,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["Calls"],
-                    user.LastInitial(),
+                    Formatter.LastInitial(user.Name),
                     user.InboundCalls,
                     rank
                 );
@@ -686,8 +686,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["Avg Call Time"],
-                    user.LastInitial(),
-                    user.FormattedDuration(Convert.ToInt32(user.AverageInboundDuration())),
+                    Formatter.LastInitial(user.Name),
+                    Formatter.Duration(Convert.ToInt32(user.AverageInboundDuration())),
                     rank
                 );
 
@@ -701,8 +701,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["Total Ph Time"],
-                    user.LastInitial(),
-                    user.FormattedDuration(user.InboundDuration),
+                    Formatter.LastInitial(user.Name),
+                    Formatter.Duration(user.InboundDuration),
                     rank
                 );
 
@@ -716,7 +716,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["Calls > 30m"],
-                    user.LastInitial(),
+                    Formatter.LastInitial(user.Name),
                     user.InboundCallsOver30,
                     rank
                 );
@@ -731,8 +731,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["> 30%"],
-                    user.LastInitial(),
-                    user.InboundOver30Percentage(),
+                    Formatter.LastInitial(user.Name),
+                    user.InboundOver30Percentage() + "%",
                     rank
                 );
 
@@ -742,11 +742,11 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
             // Calls > 60m
             rank = 0;
-            foreach (Rep user in callsOver60Percent.Take(rankCount))
+            foreach (Rep user in inboundOver60.Take(rankCount))
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["Calls > 1h"],
-                    user.LastInitial(),
+                    Formatter.LastInitial(user.Name),
                     user.InboundCallsOver60,
                     rank
                 );
@@ -761,8 +761,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["> 60%"],
-                    user.LastInitial(),
-                    user.InboundOver60Percentage(),
+                    Formatter.LastInitial(user.Name),
+                    user.InboundOver60Percentage() + "%",
                     rank
                 );
 
@@ -791,6 +791,9 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             List<Rep> avgCallTime = reps.OrderBy(u => u.AverageOutboundDuration()).ToList();
             List<Rep> totalPhoneTime = reps.OrderByDescending(u => u.OutboundDuration).ToList();
 
+            List<Rep> outboundOver30 = reps.OrderBy(u => u.OutboundCallsOver30).ToList();
+            List<Rep> outboundOver60 = reps.OrderBy(u => u.OutboundCallsOver60).ToList();
+
             List<Rep> callsOver30Percent = reps.OrderBy(u => u.OutboundOver30Percentage()).ToList();
             List<Rep> callsOver60Percent = reps.OrderBy(u => u.OutboundOver60Percentage()).ToList();
 
@@ -813,7 +816,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["Calls"],
-                    user.LastInitial(),
+                    Formatter.LastInitial(user.Name),
                     user.OutboundCalls,
                     rank
                 );
@@ -828,8 +831,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["Avg Call Time"],
-                    user.LastInitial(),
-                    user.FormattedDuration(Convert.ToInt32(user.AverageOutboundDuration())),
+                    Formatter.LastInitial(user.Name),
+                    Formatter.Duration(Convert.ToInt32(user.AverageOutboundDuration())),
                     rank
                 );
 
@@ -843,8 +846,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["Total Ph Time"],
-                    user.LastInitial(),
-                    user.FormattedDuration(user.OutboundDuration),
+                    Formatter.LastInitial(user.Name),
+                    Formatter.Duration(user.OutboundDuration),
                     rank
                 );
 
@@ -854,11 +857,11 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
             // Calls > 30m
             rank = 0;
-            foreach (Rep user in callsOver60Percent.Take(rankCount))
+            foreach (Rep user in outboundOver30.Take(rankCount))
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["Calls > 30m"],
-                    user.LastInitial(),
+                    Formatter.LastInitial(user.Name),
                     user.OutboundCallsOver30,
                     rank
                 );
@@ -873,8 +876,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["> 30%"],
-                    user.LastInitial(),
-                    user.OutboundOver30Percentage(),
+                    Formatter.LastInitial(user.Name),
+                    user.OutboundOver30Percentage() + "%",
                     rank
                 );
 
@@ -884,11 +887,11 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
             // Calls > 60m
             rank = 0;
-            foreach (Rep user in callsOver60Percent.Take(rankCount))
+            foreach (Rep user in outboundOver60.Take(rankCount))
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["Calls > 1h"],
-                    user.LastInitial(),
+                    Formatter.LastInitial(user.Name),
                     user.OutboundCallsOver60,
                     rank
                 );
@@ -903,8 +906,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             {
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["> 60%"],
-                    user.LastInitial(),
-                    user.OutboundOver60Percentage(),
+                    Formatter.LastInitial(user.Name),
+                    user.OutboundOver60Percentage() + "%",
                     rank
                 );
 

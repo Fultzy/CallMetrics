@@ -40,7 +40,8 @@ namespace CallMetrics.Controllers.Readers.CallTracker
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error reading CallTracker report: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                var msg = Logger.ExceptionLog("Error reading CallTracker report: " + ex.Message);
+                MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return new List<Ticket>();
             }
         }
@@ -89,7 +90,8 @@ namespace CallMetrics.Controllers.Readers.CallTracker
                         }
                         catch (Exception e)
                         {
-                            throw new Exception($"Error in thread {thread} processing rows {startRow} to {endRow}: {e.Message}", e);
+                            var msg = Logger.ExceptionLog($"Error in thread {thread} processing rows {startRow} to {endRow}: {e.Message}");
+                            throw new Exception(msg, e);
                         }
                         finally
                         {
@@ -107,7 +109,9 @@ namespace CallMetrics.Controllers.Readers.CallTracker
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error processing CallTracker report: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+
+                var msg = Logger.ExceptionLog("Error processing CallTracker report: " + ex.Message);
+                MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return new List<Ticket>();
             }
             finally
@@ -141,7 +145,12 @@ namespace CallMetrics.Controllers.Readers.CallTracker
                     if (ParseTicketEntries(row, startRow, values) is (List<TicketEntry> ticketEntries, int newRow))
                     {
                         newTicket.TicketEntries = ticketEntries;
-                        results.Add(newTicket);
+
+                        //if (results.Any(t => t.CallRecNumber == newTicket.CallRecNumber))
+                        //    continue; // prevent duplicates
+                        //else 
+                            results.Add(newTicket);
+                        
                         row = newRow;
                     }
                 }

@@ -38,32 +38,14 @@ namespace CallMetrics.Models
         public int WeekendCalls { get; set; } = 0;
         public int InternalCalls { get; set; } = 0;
 
-        public string LastInitial()
+        public int AverageCallTime()
         {
-            if (Name == null) return "Invalid Name";
-            if (Name == "-- AVERAGE --") return Name;
-            if (Name == "-- TOTAL --") return Name;
-
-            string[] name = Name.Split(' ');
-            if (name.Length > 1)
-            {
-                return name[0] + " " + name.Last()[0];
-            }
-            else
-            {
-                return name[0];
-            }
-        }
-
-        public string AverageCallTime()
-        {
-            if (TotalCalls == 0) return "0s";
+            if (TotalCalls == 0) return 0;
 
             double averageTime = (double)TotalDuration / (double)TotalCalls;
-            if (averageTime < 1) Console.WriteLine("OPPS!");
             int averageTimeInSeconds = Convert.ToInt32(averageTime);
 
-            return FormattedDuration(averageTimeInSeconds);
+            return averageTimeInSeconds;
         }
 
         public int AdjustedCalls()
@@ -78,83 +60,53 @@ namespace CallMetrics.Models
 
         public float AverageDuration()
         {
-            if (TotalCalls == 0) return 0; 
+            if (TotalCalls == 0) return 0;
             return TotalDuration / TotalCalls;
         }
 
-        public string Over30Percentage()
+        public double Over30Percentage()
         {
-            if (TotalCalls == 0) return "No Call Data!";
-            return ((float)CallsOver30 / (float)TotalCalls) * 100 + "%";
+            return Mather.DoubleAverage(CallsOver30, TotalCalls);
         }
 
-        public float Over30PercentFloat()
+        public double Over60Percentage()
         {
-            if (TotalCalls == 0) return 0;
-            return ((float)CallsOver30 / (float)TotalCalls) * 100;
+            return Mather.DoubleAverage(CallsOver60, TotalCalls);
         }
 
-        public string Over60Percentage()
+        internal decimal CallsToTicketsRatio()
         {
-            if (TotalCalls == 0) return "No Call Data!";
-            return ((float)CallsOver60 / (float)TotalCalls) * 100 + "%";
+            return Mather.Ratio(TotalCalls, TotalTickets);
         }
 
-        public float Over60PercentFloat()
+        internal double InboundOver30Percentage()
         {
-            if (TotalCalls == 0) return 0;
-            return ((float)CallsOver60 / (float)TotalCalls) * 100;
+            return Mather.DoubleAverage(InboundCallsOver30, InboundCalls);
         }
 
-        public string FormattedDuration(int duration)
+        internal double InboundOver60Percentage()
         {
-            TimeSpan time = TimeSpan.FromSeconds(duration);
-            if (time.Hours == 0 && time.Days == 0)
-                return $"{time.Minutes}m {time.Seconds}s";
-            else
-                return $"{time.Hours + (time.Days * 24)}h {time.Minutes}m {time.Seconds}s";
+            return Mather.DoubleAverage(InboundCallsOver60, InboundCalls);
         }
 
-        internal string CallsToTicketsRatio()
+        internal double OutboundOver30Percentage()
         {
-            if (TotalTickets == 0) return "No Ticket Data!";
-            return Math.Round((float)TotalCalls / (float)TotalTickets, 2).ToString();
+            return Mather.DoubleAverage(OutboundCallsOver30, OutboundCalls);
         }
 
-        internal string InboundOver30Percentage()
+        internal double OutboundOver60Percentage()
         {
-            if (InboundCalls == 0) return "No Call Data!";
-            return ((float)InboundCallsOver30 / (float)InboundCalls) * 100 + "%";
+            return Mather.DoubleAverage(OutboundCallsOver60, OutboundCalls);
         }
 
-        internal string InboundOver60Percentage()
+        internal float AverageInboundDuration()
         {
-            if (InboundCalls == 0) return "No Call Data!";
-            return ((float)InboundCallsOver60 / (float)InboundCalls) * 100 + "%";
+            return Mather.IntAverage(InboundDuration, InboundCalls);
         }
 
-        internal string OutboundOver30Percentage()
+        internal float AverageOutboundDuration()
         {
-            if (OutboundCalls == 0) return "No Call Data!";
-            return ((float)OutboundCallsOver30 / (float)OutboundCalls) * 100 + "%";
-        }
-
-        internal string OutboundOver60Percentage()
-        {
-            if (OutboundCalls == 0) return "No Call Data!";
-            return ((float)OutboundCallsOver60 / (float)OutboundCalls) * 100 + "%";
-        }
-
-        internal object AverageInboundDuration()
-        {
-            if (InboundCalls == 0) return 0;
-            return InboundDuration / InboundCalls;
-        }
-
-        internal object AverageOutboundDuration()
-        {
-            if (OutboundCalls == 0) return 0;
-            return OutboundDuration / OutboundCalls;
+            return Mather.IntAverage(OutboundDuration, OutboundCalls);
         }
     }
 }

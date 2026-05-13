@@ -54,7 +54,8 @@ namespace CallMetrics.Utilities
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show("Error loading settings. Using defaults.\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    var msg = Logger.ExceptionLog("Error loading settings. Using defaults.\n" + ex.Message);
+                    MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             else
@@ -105,7 +106,8 @@ namespace CallMetrics.Utilities
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error saving settings. RIP\n" + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                var msg = Logger.ExceptionLog("Error saving settings: " + ex.Message);
+                MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
         }

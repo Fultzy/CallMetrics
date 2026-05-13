@@ -37,7 +37,8 @@ namespace CallMetrics.Controllers.Readers.Dynamics
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error reading Dynamics report: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                var msg = Logger.ExceptionLog("Error reading Dynamics report: " + ex.Message);
+                MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return new List<Ticket>();
             }
         }

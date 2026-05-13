@@ -15,14 +15,23 @@ namespace CallMetrics.Data
         public static List<Call> Calls = new();
         public static List<Ticket> Tickets = new();
 
-        public static bool AddRep(Rep newRep)
-        {
-            if (newRep == null) return false;
-            if (Reps.Any(r => r.Name == newRep.Name)) return false;
+        private static List<Call> _rawCalls = new();
+        private static List<Ticket> _rawTickets = new();
 
-            Reps.Add(newRep);
-            return true;
+
+        public static void RerunMetrics()
+        {
+            // Store raw data in temp variables before clearing
+            var tempCalls = _rawCalls.ToList();
+            var tempTickets = _rawTickets.ToList();
+
+            Clear();
+
+            AddCalls(tempCalls);
+            AddTickets(tempTickets);
         }
+
+
 
 
         private static Alias GetAliasForRepName(string repName)
@@ -60,9 +69,20 @@ namespace CallMetrics.Data
 
         public static bool AddCall(Call newCall)
         {
-            if (newCall == null) return false;
+            if (newCall == null)
+            {
+                Logger.ExceptionLog("Attempted to add null call.");
+                return false;
+            }
+
             if (Calls.Any(c => c.DateTime == newCall.DateTime 
-            && c.Duration == newCall.Duration)) return false;
+        && c.Duration == newCall.Duration))
+            {
+                Logger.ExceptionLog($"Duplicate call detected for DateTime: {newCall.DateTime}, Duration: {newCall.Duration}");
+                return false;
+            }
+
+            _rawCalls.Add(newCall); // Store raw call for potential future use in alias creation
 
             if (Reps.Any(r => r.Name == newCall.UserName))
             {
@@ -101,8 +121,19 @@ namespace CallMetrics.Data
 
         public static bool AddTicket(Ticket newTicket)
         {
-            if (newTicket == null) return false;
-            if (Tickets.Any(t => t.CallRecNumber == newTicket.CallRecNumber)) return false;
+            if (newTicket == null)
+            {
+                Logger.ExceptionLog("Attempted to add null ticket.");
+                return false;
+            }
+            
+            if (Tickets.Any(t => t.CallRecNumber == newTicket.CallRecNumber))
+            {
+                Logger.ExceptionLog($"Duplicate ticket detected for CallRecNumber: {newTicket.CallRecNumber}");
+                return false;
+            }
+
+            _rawTickets.Add(newTicket);
 
             var repNameFromTicket = newTicket.TicketEntries.First().AssignedToName;
 
@@ -162,6 +193,8 @@ namespace CallMetrics.Data
             Reps.Clear();
             Calls.Clear();
             Tickets.Clear();
+            _rawCalls.Clear();
+            _rawTickets.Clear();
         }
 
         private static void UpdateRepCallMetrics(Rep rep, Call call)

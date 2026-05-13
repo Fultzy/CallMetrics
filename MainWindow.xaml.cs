@@ -29,6 +29,9 @@ namespace CallMetrics
     {
         public MetricsReport ReportGenerator = new();
 
+        
+
+
         public MainWindow()
         {
             InitializeComponent();
@@ -45,7 +48,9 @@ namespace CallMetrics
             CheckTicketImportType();
             CheckCallImportType();
 
-            VersionLabel.Content = "v1.2.2.1"; // oof
+            RepsDataGrid.ItemsSource = MetricsData.Reps;
+         
+            VersionLabel.Content = "v1.2.3"; // oof
         }
 
         public void UpdateProgressBar(int value)
@@ -184,22 +189,36 @@ namespace CallMetrics
             NotificationStack.Children.Add(notification);
         }
 
+        public void RefreshDataGrid()
+        {
+            MetricsData.RerunMetrics();
+
+            RepsDataGrid.ItemsSource = MetricsData.Reps;
+            RepsDataGrid.Items.Refresh();
+
+            Notify(Notifications.RefreshedDataGrid);
+        }
+
         private void SetRepsToTeams_Click(object sender, RoutedEventArgs e)
         {
             TeamsWindow teamsWindow = new TeamsWindow(MetricsData.Reps);
             teamsWindow.ShowDialog();
+
+            RefreshDataGrid();
         }
 
         private void SetRepAliases_Click(object sender, RoutedEventArgs e)
         {
             AliasWindow aliasWindow = new AliasWindow(MetricsData.Reps);
             aliasWindow.ShowDialog();
+
+            RefreshDataGrid();
         }
 
         private void ClearData_Click(object sender, RoutedEventArgs e)
         {
             MetricsData.Clear();
-            RepsDataGrid.ItemsSource = null;
+            RepsDataGrid.ItemsSource = MetricsData.Reps;
             RepsDataGrid.Items.Refresh();
         }
 

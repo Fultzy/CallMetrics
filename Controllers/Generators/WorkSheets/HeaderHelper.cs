@@ -1,4 +1,5 @@
-﻿using Microsoft.Office.Interop.Excel;
+﻿using CallMetrics.Utilities;
+using Microsoft.Office.Interop.Excel;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -52,7 +53,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             }
             catch (Exception ex)
             {
-                throw new Exception("Error adding rep header: " + ex.Message);
+                var msg = Logger.ExceptionLog("Error adding rep header: " + ex.Message);
+                throw new Exception(msg);
             }
 
             return worksheet;

@@ -67,7 +67,8 @@ namespace CallMetrics.Controllers.Readers.Five9
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error reading Five9 report: " + ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                var msg = Logger.ExceptionLog("Error reading Five9 report: " + ex.Message);
+                MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return new List<Call>();
             }
         }

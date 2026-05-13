@@ -74,7 +74,8 @@ namespace CallMetrics.Controllers.Readers.Nextiva
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Error reading file: " + ex.Message + "\n Try closing the damn file, huh?", "idk bro, good luck.. ", MessageBoxButton.YesNoCancel, MessageBoxImage.Error);
+                var msg = Logger.ExceptionLog("Error reading file: " + ex.Message + "\n Try closing the file.");
+                MessageBox.Show(msg, "Error", MessageBoxButton.YesNoCancel, MessageBoxImage.Error);
             }
 
             return Calls;

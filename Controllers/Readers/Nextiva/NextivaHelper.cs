@@ -28,7 +28,8 @@ namespace CallMetrics.Controllers.Readers.Nextiva
                     return row[headers[option]];
                 }
             }
-            throw new Exception("No valid 'Name' header found in Nextiva report.");
+            var msg = Logger.ExceptionLog("No valid 'Name' header found in Nextiva report. Checked options: " + string.Join(", ", options));
+            throw new Exception(msg);
         }
 
         public static int GetDurationInSeconds(string input)
