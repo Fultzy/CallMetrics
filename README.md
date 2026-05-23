@@ -1,12 +1,14 @@
 # CallMetrics
 
-CallMetrics is a WPF desktop application built with C# (.NET 8) for importing, analyzing, and reporting call data from Nextiva CSV reports. The application provides a user-friendly interface for call center managers and teams to visualize, organize, and export key metrics about representative performance.
+CallMetrics is a WPF desktop application built with C# (.NET 8) for importing, analyzing, and reporting call and ticket data from Nextiva, Five9, Call Tracker, and soon Microsoft Dynamics. The application provides a user-friendly interface for call center managers and teams to visualize, organize, and export key metrics about representative performance.
 
 ## Features
 
-- **Import Nextiva Reports:** Easily select and import CSV files containing call data.
+- **Import Call Reports:** Select an import type and injest CSV/Excel files containing call data.
+- **Import Ticket Reports:** Select an import type and injest CSV/Excel files containing ticket data.
 - **Data Visualization:** View detailed metrics for each representative, including total calls, durations, inbound/outbound breakdowns, weekend/internal calls, and more.
 - **Team Assignment:** Organize representatives into teams for more granular reporting.
+- **Alias Control:** If data sets are using any number of non-matching names between them.
 - **Report Generation:** Export analyzed metrics to Excel files for further review or sharing.
 - **Customizable Output Directory:** Save generated reports to your preferred location. These reports include Formulas for manual inputting additional data.
 - **Clear Data:** Reset imported data to start fresh.
@@ -57,6 +59,7 @@ CallMetrics is a WPF desktop application built with C# (.NET 8) for importing, a
 ## Customization
 
 - **Team Management:** Assign and manage teams for more detailed reporting.
+- **Alias Control:** Join data for teams if names are not identical in all reports
 
 ## Contributing
 
