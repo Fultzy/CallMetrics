@@ -14,16 +14,17 @@ namespace CallMetrics.Utilities
             return Math.Round((decimal)value1 / value2, 2, MidpointRounding.AwayFromZero);
         }
 
-        public static double DoubleAverage(double value1, double value2)
+        public static double DoublePercentage(double value1, double value2)
         {
             if (value2 == 0) return 0;
-            return (double)value1 / value2 * 100;
+            return (double)((long)value1 / value2) * 100;
         }
 
         public static int IntAverage(int value1, int value2)
         {
             if (value2 == 0) return 0;
-            return (int)value1 / value2 * 100;
+            // Using 100L ensures the math happens in 64-bit to avoid overflow
+            return (int)((long)value1 / value2);
         }
     }
 }

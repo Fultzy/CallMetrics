@@ -29,13 +29,20 @@
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto"/>
                                 <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
                             </Grid.ColumnDefinitions>
 
                             <Label Content="Default Save Location:" FontSize="16"  Foreground="White" Padding="10,5,0,5" VerticalAlignment="Center" Margin="5" HorizontalAlignment="Left" Grid.Column="0"/>
 
-                            <TextBox x:Name="DefaultSaveLocationTextBlock" Text="C:\Users\Username\Documents\CallMetrics" FontSize="14" Foreground="#FFB9B9B9" Padding="10,5,0,5" VerticalAlignment="Center" Margin="10,5,150,5" HorizontalAlignment="Stretch" Grid.Column="1" Background="#4C101010"/>
+                            <TextBox x:Name="DefaultSaveLocationTextBlock" Text="C:\Users\Username\Documents\CallMetrics" FontSize="14" Foreground="#FFB9B9B9" Padding="10,5,0,5" VerticalAlignment="Center" Margin="10,5,10,5" HorizontalAlignment="Stretch" Grid.Column="1" Background="#4C101010"/>
 
-                            <Button x:Name="BrowseButton" Content="Browse" FontSize="14" Padding="5" Margin="0,5,10,5" VerticalAlignment="Center" HorizontalAlignment="Right" Grid.Column="1" Width="80" Click="BrowseButton_Click" Foreground="White"/>
+                            <StackPanel Orientation="Horizontal" Grid.Column="2">
+                                <Button x:Name="OpenFolderButton" Grid.Column="2" FontSize="14" Padding="5" Margin="0,5,5,5" VerticalAlignment="Center" HorizontalAlignment="Right" Click="OpenFolderButton_Click" Foreground="White">
+                                    <l:PackIcon Kind="FolderOpen"/>
+                                </Button>
+
+                                <Button x:Name="BrowseButton" Content="Browse" FontSize="14" Padding="5" Margin="0,5,10,5" VerticalAlignment="Center" HorizontalAlignment="Right" Grid.Column="2" Width="80" Click="BrowseButton_Click" Foreground="White"/>
+                            </StackPanel>
                         </Grid>
                     </l:Card>
 

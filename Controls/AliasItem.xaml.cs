@@ -58,9 +58,13 @@ namespace CallMetrics.Controls
             var existingAlias = Settings.Aliases.FirstOrDefault(a => a.Name == AliasName);
             if (!existingAlias.IsNull())
             {
+                // remove existing
+                Settings.Aliases.Remove(existingAlias);
+
                 // Update the alias name
                 existingAlias.Name = AliasTextBox.Text.Trim();
                 AliasName = existingAlias.Name;
+                Settings.Aliases.Add(existingAlias);
                 Settings.Save();
             }
         }

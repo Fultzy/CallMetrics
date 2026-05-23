@@ -19,9 +19,13 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
                 if (!string.IsNullOrEmpty(title))
                 {
                     // Table Name Cells
-                    var wrds = title.Split(' ');
-                    worksheet.Cells[row, colOffset + 1] = wrds[0];
-                    worksheet.Cells[row + 1, colOffset + 1] = wrds.Length > 1 ? wrds[1] : "";
+                    // going back to full name in one cell
+                    worksheet.Cells[row, colOffset + 1] = title;
+
+                    //var wrds = title.Split(' ');
+                    //worksheet.Cells[row, colOffset + 1] = wrds[0];
+                    //worksheet.Cells[row + 1, colOffset + 1] = wrds.Length > 1 ? wrds[1] : "";
+
                     worksheet.Cells[row + 1, colOffset + 1].Font.Bold = true;
                     worksheet.Cells[row + 1, colOffset + 1].Borders[XlBordersIndex.xlEdgeBottom].LineStyle = XlLineStyle.xlContinuous;
                     worksheet.Cells[row, colOffset + 1].Font.Bold = true;

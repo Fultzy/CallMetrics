@@ -7,7 +7,7 @@
         xmlns:controls="clr-namespace:CallMetrics.Controls"
         xmlns:l="http://materialdesigninxaml.net/winfx/xaml/themes"
         mc:Ignorable="d" WindowStyle="None" AllowsTransparency="True" Background="Transparent"
-        Title="Assign reps to Teams" Height="650" Width="750" AllowDrop="True">
+        Title="Assign reps to Teams" MinHeight="250" MinWidth="750" Height="650" Width="750" AllowDrop="True">
     <Grid >
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" MinWidth="120" MaxWidth="250"/>

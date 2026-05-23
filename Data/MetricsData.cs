@@ -38,7 +38,7 @@ namespace CallMetrics.Data
         {
             foreach (var alias in Settings.Aliases)
             {
-                if (alias.AliasedTo.Any(name => name == repName))
+                if (alias.For(repName))
                 {
                     return alias;
                 }
@@ -102,6 +102,13 @@ namespace CallMetrics.Data
                     Name = alias.Name,
                     Extension = newCall.UserExtention?.Trim() ?? "None"
                 };
+
+                if (Reps.Any(r => r.Name == alias.Name))
+                {
+                    rep = Reps.First(r => r.Name == alias.Name);
+                    UpdateRepCallMetrics(rep, newCall);
+                    return true;
+                }
 
                 UpdateRepCallMetrics(rep, newCall);
                 Reps.Add(rep);  

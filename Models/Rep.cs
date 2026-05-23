@@ -66,12 +66,12 @@ namespace CallMetrics.Models
 
         public double Over30Percentage()
         {
-            return Mather.DoubleAverage(CallsOver30, TotalCalls);
+            return Mather.DoublePercentage(CallsOver30, TotalCalls);
         }
 
         public double Over60Percentage()
         {
-            return Mather.DoubleAverage(CallsOver60, TotalCalls);
+            return Mather.DoublePercentage(CallsOver60, TotalCalls);
         }
 
         internal decimal CallsToTicketsRatio()
@@ -81,22 +81,22 @@ namespace CallMetrics.Models
 
         internal double InboundOver30Percentage()
         {
-            return Mather.DoubleAverage(InboundCallsOver30, InboundCalls);
+            return Mather.DoublePercentage(InboundCallsOver30, InboundCalls);
         }
 
         internal double InboundOver60Percentage()
         {
-            return Mather.DoubleAverage(InboundCallsOver60, InboundCalls);
+            return Mather.DoublePercentage(InboundCallsOver60, InboundCalls);
         }
 
         internal double OutboundOver30Percentage()
         {
-            return Mather.DoubleAverage(OutboundCallsOver30, OutboundCalls);
+            return Mather.DoublePercentage(OutboundCallsOver30, OutboundCalls);
         }
 
         internal double OutboundOver60Percentage()
         {
-            return Mather.DoubleAverage(OutboundCallsOver60, OutboundCalls);
+            return Mather.DoublePercentage(OutboundCallsOver60, OutboundCalls);
         }
 
         internal float AverageInboundDuration()

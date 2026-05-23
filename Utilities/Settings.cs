@@ -43,7 +43,12 @@ namespace CallMetrics.Utilities
                     Teams = data.Teams;
                     RankedRepsCount = data.RankedRepsCount;
                     AutoOpenReport = data.AutoOpenReport;
-                    DefaultReportPath = data.DefaultReportPath;
+
+                    if (Directory.Exists(data.DefaultReportPath))
+                        DefaultReportPath = data.DefaultReportPath;
+                    else
+                        DefaultReportPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+
                     CallImportType = data.CallImportType;
                     
                     InboundCallTypes = data.InboundCallTypes;
@@ -191,6 +196,13 @@ namespace CallMetrics.Utilities
         public override string ToString()
         {
             return string.Join(", ", AliasedTo);
+        }
+
+        public bool For(string name)
+        {
+            if (name == null) throw new ArgumentNullException("name");
+
+            return AliasedTo.Any(n => n.Equals(name, StringComparison.OrdinalIgnoreCase));
         }
     }
 

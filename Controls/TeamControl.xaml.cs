@@ -37,7 +37,7 @@ namespace CallMetrics.Controls
         {
             InitializeComponent();
             TeamName = teamName;
-            TeamNameLabel.Content = teamName;
+            TeamNameTextbox.Text = teamName;
 
             Team team = Settings.Teams.Where(t => t.Name == TeamName).FirstOrDefault();
             if (team.Equals(default(SettingsData)))
@@ -80,6 +80,22 @@ namespace CallMetrics.Controls
         private void DeleteTeamButton_Click(object sender, RoutedEventArgs e)
         {
             DeleteTeamClicked?.Invoke(this, EventArgs.Empty);
+        }
+
+        private void TeamNameTextbox_TextChanged(object sender, RoutedEventArgs e)
+        {
+            var existingTeam = Settings.Teams.FirstOrDefault(a => a.Name == TeamName);
+            if (!existingTeam.IsNull() && IsLoaded)
+            {
+                // remove existing team
+                Settings.Teams.Remove(existingTeam);
+
+                // readd updated team name and add back to settings
+                existingTeam.Name = TeamNameTextbox.Text.Trim();
+                TeamName = existingTeam.Name;
+                Settings.Teams.Add(existingTeam);
+                Settings.Save();
+            }
         }
 
         public void RefreshTeamMembers()

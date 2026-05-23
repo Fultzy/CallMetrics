@@ -430,7 +430,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
             // setup sorted lists
             List<Rep> adjTickets = reps.OrderByDescending(u => u.AdjustedTickets()).ToList();
-            List<Rep> callsToTickets = reps.OrderByDescending(u => u.CallsToTicketsRatio()).ToList();
+            List<Rep> callsToTickets = reps.OrderBy(u => u.CallsToTicketsRatio()).ToList();
 
             List<Rep> adjCalls = reps.OrderByDescending(u => u.AdjustedCalls()).ToList();
             List<Rep> avgCallTime = reps.OrderBy(u => u.AverageDuration()).ToList();
@@ -684,10 +684,12 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             rank = 0;
             foreach (Rep user in avgCallTime.Take(rankCount))
             {
+                var aid = user.AverageInboundDuration();
+
                 TableHelper.WriteTwoSidedTable(worksheet, row,
                     AvgTypeHeader["Avg Call Time"],
                     Formatter.LastInitial(user.Name),
-                    Formatter.Duration(Convert.ToInt32(user.AverageInboundDuration())),
+                    Formatter.Duration(Convert.ToInt32(aid)),
                     rank
                 );
 
@@ -1058,10 +1060,10 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
                     continue;
 
                 // note not included if not included
-                worksheet.Cells[row, 2] = team.IsExcluded ? "Is Excluded From Metrics" : "";
-                worksheet.Cells[row, 2].HorizontalAlignment = XlHAlign.xlHAlignLeft;
-                worksheet.Cells[row, 2].Font.Italic = true;
-                worksheet.Cells[row, 2].Font.Size = 11;
+                worksheet.Cells[row, 3] = team.IsExcluded ? "Is Excluded From Metrics" : "";
+                worksheet.Cells[row, 3].HorizontalAlignment = XlHAlign.xlHAlignLeft;
+                worksheet.Cells[row, 3].Font.Italic = true;
+                worksheet.Cells[row, 3].Font.Size = 11;
                
                 // add the rep header
                 worksheet = HeaderHelper.WriteOneSidedHeader(worksheet, row, team.Name, UsrHeader);

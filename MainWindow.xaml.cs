@@ -50,7 +50,7 @@ namespace CallMetrics
 
             RepsDataGrid.ItemsSource = MetricsData.Reps;
          
-            VersionLabel.Content = "v1.2.3"; // oof
+            VersionLabel.Content = "v1.2.3.1"; // oof
         }
 
         public void UpdateProgressBar(int value)
@@ -87,8 +87,7 @@ namespace CallMetrics
                     return;
                 }
 
-                RepsDataGrid.ItemsSource = MetricsData.Reps;
-                RepsDataGrid.Items.Refresh();
+                SetDataGrid(MetricsData.Reps);
 
                 Notify(Notifications.ImportCallsComplete);
             }
@@ -127,9 +126,7 @@ namespace CallMetrics
                     return;
                 }
 
-
-                RepsDataGrid.ItemsSource = MetricsData.Reps;
-                RepsDataGrid.Items.Refresh();
+                SetDataGrid(MetricsData.Reps);
 
                 Notify(Notifications.ImportTicketsComplete);
             }
@@ -151,14 +148,11 @@ namespace CallMetrics
                 Notify(Notifications.NoCalls);
                 return;
             }
-
-            // temp removed to allow use of only call data
-            //if (MetricsData.Tickets.Count == 0)
-            //{
-            //    Notify(Notifications.NoTickets);
-            //    return;
-            //}
-
+            if (MetricsData.Tickets.Count == 0)
+            {
+                Notify(Notifications.NoTickets);
+                return;
+            }
             if (MetricsData.Reps.Count == 0)
             {
                 Notify(Notifications.NoReps);
@@ -193,10 +187,53 @@ namespace CallMetrics
         {
             MetricsData.RerunMetrics();
 
-            RepsDataGrid.ItemsSource = MetricsData.Reps;
-            RepsDataGrid.Items.Refresh();
+            SetDataGrid(MetricsData.Reps);
 
             Notify(Notifications.RefreshedDataGrid);
+        }
+
+        private void SetDataGrid(List<Rep> reps)
+        {
+            // if no teams are set, show all reps
+            if (Settings.Teams.Count == 0)
+            {
+                RepsDataGrid.ItemsSource = reps;
+                RepsDataGrid.Items.Refresh();
+                return;
+            }
+
+            // if no team is set to be included in the report, show all reps
+            if (Settings.Teams.All(t => !t.IncludeInMetrics))
+            {
+                RepsDataGrid.ItemsSource = reps;
+                RepsDataGrid.Items.Refresh();
+                return;
+            }
+
+            // remove reps that are not in a team that is selected to be included in the report
+            var filteredReps = new List<Rep>();
+            foreach (var rep in reps)
+            {
+                var team = Settings.Teams.FirstOrDefault(t => t.Members.Contains(rep.Name));
+                if (!team.IsNull())
+                {
+                    if (team.IncludeInMetrics || team.IsExcluded)
+                    {
+                        filteredReps.Add(rep);
+                    }
+                }
+            }
+
+            // if there are no filtered reps show all reps
+            if (filteredReps.Count == 0)
+            {
+                RepsDataGrid.ItemsSource = reps;
+                RepsDataGrid.Items.Refresh();
+                return;
+            }
+
+            RepsDataGrid.ItemsSource = filteredReps;
+            RepsDataGrid.Items.Refresh();
         }
 
         private void SetRepsToTeams_Click(object sender, RoutedEventArgs e)
@@ -218,8 +255,7 @@ namespace CallMetrics
         private void ClearData_Click(object sender, RoutedEventArgs e)
         {
             MetricsData.Clear();
-            RepsDataGrid.ItemsSource = MetricsData.Reps;
-            RepsDataGrid.Items.Refresh();
+            SetDataGrid(MetricsData.Reps);
         }
 
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -316,7 +352,10 @@ namespace CallMetrics
             if (msg == WM_NCHITTEST)
             {
                 handled = true;
-                var mousePoint = new Point((lParam.ToInt32() & 0xFFFF), (lParam.ToInt32() >> 16));
+                // Properly extract signed coordinates from lParam
+                int x = (short)(lParam.ToInt32() & 0xFFFF);
+                int y = (short)(lParam.ToInt32() >> 16);
+                var mousePoint = new Point(x, y);
 
                 // Convert screen to window position
                 var windowPos = this.PointFromScreen(mousePoint);

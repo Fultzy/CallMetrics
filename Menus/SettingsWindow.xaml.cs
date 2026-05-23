@@ -65,6 +65,19 @@ namespace CallMetrics.Menus
             }
         }
 
+        private void OpenFolderButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start("explorer.exe", Settings.DefaultReportPath);
+            }
+            catch (Exception ex)
+            {
+                var msg = Logger.ExceptionLog("Error opening folder.\n" + ex.Message);
+                MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void OnRowsTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
             if (int.TryParse(NumberOfRowsTextBox.Text, out int value))
