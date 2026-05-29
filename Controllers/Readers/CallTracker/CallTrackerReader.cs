@@ -18,7 +18,7 @@ namespace CallMetrics.Controllers.Readers.CallTracker
         {
             // open explorer to select file
             var openFileDialog = new Microsoft.Win32.OpenFileDialog();
-            openFileDialog.DefaultDirectory = Settings.DefaultReportPath;
+            openFileDialog.DefaultDirectory = Settings.Data.DefaultReportPath;
             openFileDialog.DefaultExt = ".xlsx";
             openFileDialog.Filter = "Excel Files (*.xlsx)|*.xlsx|All Files (*.*)|*.*";
 

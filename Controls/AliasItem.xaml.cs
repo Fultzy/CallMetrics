@@ -1,4 +1,5 @@
-﻿using CallMetrics.Utilities;
+﻿using CallMetrics.Models;
+using CallMetrics.Utilities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -41,7 +42,7 @@ namespace CallMetrics.Controls
 
         private void RefreshAliasList()
         {
-            Alias alias = Settings.Aliases.Where(t => t.Name == AliasName).FirstOrDefault();
+            Alias alias = Settings.Data.Aliases.Where(t => t.Name == AliasName).FirstOrDefault();
             if (alias.IsNull())
                 return;
 
@@ -55,23 +56,23 @@ namespace CallMetrics.Controls
 
         private void AliasTextBox_TextChanged(object sender, RoutedEventArgs e)
         {
-            var existingAlias = Settings.Aliases.FirstOrDefault(a => a.Name == AliasName);
+            var existingAlias = Settings.Data.Aliases.FirstOrDefault(a => a.Name == AliasName);
             if (!existingAlias.IsNull())
             {
                 // remove existing
-                Settings.Aliases.Remove(existingAlias);
+                Settings.Data.Aliases.Remove(existingAlias);
 
                 // Update the alias name
                 existingAlias.Name = AliasTextBox.Text.Trim();
                 AliasName = existingAlias.Name;
-                Settings.Aliases.Add(existingAlias);
+                Settings.Data.Aliases.Add(existingAlias);
                 Settings.Save();
             }
         }
 
         private void DeleteAliasButton_Click(object sender, RoutedEventArgs e)
         {
-            Settings.Aliases.RemoveAll(a => a.Name == AliasName);
+            Settings.Data.Aliases.RemoveAll(a => a.Name == AliasName);
             Settings.Save();
             
             // just remove this item from its parent
@@ -100,7 +101,7 @@ namespace CallMetrics.Controls
 
         private void FreeRepsWrapPanel_Drop(object sender, DragEventArgs e)
         {
-            Alias alias = Settings.Aliases.Where(t => t.Name == AliasName).FirstOrDefault();
+            Alias alias = Settings.Data.Aliases.Where(t => t.Name == AliasName).FirstOrDefault();
             if (alias.IsNull())
                 return;
 
@@ -118,7 +119,7 @@ namespace CallMetrics.Controls
                     this.RemoveLogicalChild(item);
                 }
 
-                foreach (var kvp in Settings.Aliases.Where(k => k.AliasedTo.Contains(item.RepName)))
+                foreach (var kvp in Settings.Data.Aliases.Where(k => k.AliasedTo.Contains(item.RepName)))
                 {
                     kvp.AliasedTo.Remove(item.RepName);
                 }

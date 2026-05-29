@@ -25,7 +25,7 @@
 
         <l:Card MouseLeftButtonDown="Window_MouseLeftButtonDown" Grid.ColumnSpan="3" Grid.RowSpan="3" Margin="1"/>
 
-        <StackPanel Orientation="Horizontal" Margin="0,10,0,0" Grid.Row="0" Grid.ColumnSpan="2">
+        <StackPanel Orientation="Horizontal" Margin="0,10,5,0" Grid.Row="0">
             <Image Source="pack://application:,,,/Icon/CallMetrics_Logo.png" Height="32" Width="32" Margin="10,0,0,0" VerticalAlignment="Center" MouseDown="Window_MouseLeftButtonDown"/>
             <Label Content="CallMetrics" FontSize="20" FontWeight="Bold" Foreground="White" Padding="10,0,0,0" VerticalAlignment="Center" MouseDown="Window_MouseLeftButtonDown"/>
             <Label x:Name="VersionLabel" Content="v1.2.1" FontSize="11" Foreground="#FFCCCCCC" Padding="0,0,0,0" VerticalAlignment="Center" Margin="3,8,0,0" MouseDown="Window_MouseLeftButtonDown"/>

@@ -7,7 +7,7 @@ namespace CallMetrics.Utilities
         public static Notification GenerateComplete = new Notification
         {
             Title = "Report Generation Complete",
-            Message = $"Your metrics report has been successfully generated!\n Saved to {Settings.DefaultReportPath}"
+            Message = $"Your metrics report has been successfully generated!\n Saved to {Settings.Data.DefaultReportPath}"
         };
 
         public static Notification RefreshedDataGrid = new Notification

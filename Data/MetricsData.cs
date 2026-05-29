@@ -36,7 +36,7 @@ namespace CallMetrics.Data
 
         private static Alias GetAliasForRepName(string repName)
         {
-            foreach (var alias in Settings.Aliases)
+            foreach (var alias in Settings.Data.Aliases)
             {
                 if (alias.For(repName))
                 {
@@ -54,7 +54,7 @@ namespace CallMetrics.Data
                 AliasedTo = new List<string> { repName }
             };
 
-            Settings.Aliases.Add(newAlias);
+            Settings.Data.Aliases.Add(newAlias);
             Settings.Save();
             return newAlias;
         }
@@ -209,12 +209,12 @@ namespace CallMetrics.Data
             rep.TotalCalls += 1;
             rep.TotalDuration += call.Duration;
 
-            if (Settings.InboundCallTypes.Contains(call.CallType.ToLower()))
+            if (Settings.Data.InboundCallTypes.Contains(call.CallType.ToLower()))
             {
                 rep.InboundCalls += 1;
                 rep.InboundDuration += call.Duration;
             }
-            else if (Settings.OutboundCallTypes.Contains(call.CallType.ToLower()))
+            else if (Settings.Data.OutboundCallTypes.Contains(call.CallType.ToLower()))
             {
                 rep.OutboundCalls += 1;
                 rep.OutboundDuration += call.Duration;
@@ -224,11 +224,11 @@ namespace CallMetrics.Data
             {
                 rep.CallsOver30 += 1;
 
-                if (Settings.InboundCallTypes.Contains(call.CallType.ToLower()))
+                if (Settings.Data.InboundCallTypes.Contains(call.CallType.ToLower()))
                 {
                     rep.InboundCallsOver30 += 1;
                 }
-                else if (Settings.OutboundCallTypes.Contains(call.CallType.ToLower()))
+                else if (Settings.Data.OutboundCallTypes.Contains(call.CallType.ToLower()))
                 {
                     rep.OutboundCallsOver30 += 1;
                 }
@@ -238,11 +238,11 @@ namespace CallMetrics.Data
             {
                 rep.CallsOver60 += 1;
 
-                if (Settings.InboundCallTypes.Contains(call.CallType.ToLower()))
+                if (Settings.Data.InboundCallTypes.Contains(call.CallType.ToLower()))
                 {
                     rep.InboundCallsOver60 += 1;
                 }
-                else if (Settings.OutboundCallTypes.Contains(call.CallType.ToLower()))
+                else if (Settings.Data.OutboundCallTypes.Contains(call.CallType.ToLower()))
                 {
                     rep.OutboundCallsOver60 += 1;
                 }

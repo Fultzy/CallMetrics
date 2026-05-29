@@ -9,6 +9,7 @@ namespace CallMetrics
     /// </summary>
     public partial class App : Application
     {
+        public static string Version => "1.2.3.2";
     }
 
 }

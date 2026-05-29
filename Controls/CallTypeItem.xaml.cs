@@ -49,12 +49,12 @@ namespace CallMetrics.Controls
             {
                 if (IsInbound)
                 {
-                    Settings.InboundCallTypes.Remove(CallType);
+                    Settings.Data.InboundCallTypes.Remove(CallType);
                     Settings.Save();
                 }
                 else
                 {
-                    Settings.OutboundCallTypes.Remove(CallType);
+                    Settings.Data.OutboundCallTypes.Remove(CallType);
                     Settings.Save();
                 }
                 

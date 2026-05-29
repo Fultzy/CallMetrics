@@ -43,14 +43,15 @@ namespace CallMetrics
             ProgressBar.Value = 0;
 
             // set toggles based on settings
-            TicketImportTypeToggle.IsChecked = Settings.TicketImportType == ImportType.Dynamics;
-            CallImportTypeToggle.IsChecked = Settings.CallImportType == ImportType.Nextiva;
+            TicketImportTypeToggle.IsChecked = Settings.Data.TicketImportType == ImportType.Dynamics;
+            CallImportTypeToggle.IsChecked = Settings.Data.CallImportType == ImportType.Nextiva;
+
             CheckTicketImportType();
             CheckCallImportType();
 
             RepsDataGrid.ItemsSource = MetricsData.Reps;
          
-            VersionLabel.Content = "v1.2.3.1"; // oof
+            VersionLabel.Content = $"v{App.Version}"; // oof
         }
 
         public void UpdateProgressBar(int value)
@@ -71,11 +72,11 @@ namespace CallMetrics
                 GenerateButton.IsEnabled = false;
 
                 var calls = new List<Call>();
-                if (Settings.CallImportType == ImportType.Nextiva)
+                if (Settings.Data.CallImportType == ImportType.Nextiva)
                 {
                     calls = await new NextivaReader().Start();
                 }
-                else if (Settings.CallImportType == ImportType.Five9)
+                else if (Settings.Data.CallImportType == ImportType.Five9)
                 {
                     calls = await new Five9Reader().Start();
                 }
@@ -110,11 +111,11 @@ namespace CallMetrics
                 GenerateButton.IsEnabled = false;
 
                 var tickets = new List<Ticket>();
-                if (Settings.TicketImportType == ImportType.Dynamics)
+                if (Settings.Data.TicketImportType == ImportType.Dynamics)
                 {
                     tickets = await new DynamicsReader().Start();
                 }
-                else if (Settings.TicketImportType == ImportType.CallTracker)
+                else if (Settings.Data.TicketImportType == ImportType.CallTracker)
                 {
                     tickets = await new CallTrackerReader().Start();
                 }
@@ -165,7 +166,7 @@ namespace CallMetrics
             ClearButton.IsEnabled = false;
             Task task = Task.Run(() =>
             {
-                ReportGenerator.Generate(MetricsData.Reps, Settings.DefaultReportPath);
+                ReportGenerator.Generate(MetricsData.Reps, Settings.Data.DefaultReportPath);
             });
 
             await task;
@@ -195,7 +196,7 @@ namespace CallMetrics
         private void SetDataGrid(List<Rep> reps)
         {
             // if no teams are set, show all reps
-            if (Settings.Teams.Count == 0)
+            if (Settings.Data.Teams.Count == 0)
             {
                 RepsDataGrid.ItemsSource = reps;
                 RepsDataGrid.Items.Refresh();
@@ -203,7 +204,7 @@ namespace CallMetrics
             }
 
             // if no team is set to be included in the report, show all reps
-            if (Settings.Teams.All(t => !t.IncludeInMetrics))
+            if (Settings.Data.Teams.All(t => !t.IncludeInMetrics))
             {
                 RepsDataGrid.ItemsSource = reps;
                 RepsDataGrid.Items.Refresh();
@@ -214,13 +215,10 @@ namespace CallMetrics
             var filteredReps = new List<Rep>();
             foreach (var rep in reps)
             {
-                var team = Settings.Teams.FirstOrDefault(t => t.Members.Contains(rep.Name));
-                if (!team.IsNull())
+                var team = Settings.Data.Teams.FirstOrDefault(t => t.Members.Contains(rep.Name)) ?? new Team();
+                if (!team.IsNull() && (team.IncludeInMetrics || team.IsExcluded))
                 {
-                    if (team.IncludeInMetrics || team.IsExcluded)
-                    {
-                        filteredReps.Add(rep);
-                    }
+                    filteredReps.Add(rep);
                 }
             }
 
@@ -290,13 +288,13 @@ namespace CallMetrics
         {
             if (TicketImportTypeToggle.IsChecked == false)
             {
-                Settings.TicketImportType = ImportType.CallTracker;
+                Settings.Data.TicketImportType = ImportType.CallTracker;
                 ImportTicketsButton.Content = "Import CallTracker Tickets";
                 ImportTicketsButton.Background = new SolidColorBrush(Color.FromRgb(10, 109, 187));
             }
             else
             {
-                Settings.TicketImportType = ImportType.Dynamics;
+                Settings.Data.TicketImportType = ImportType.Dynamics;
                 ImportTicketsButton.Content = "Import Dynamics Tickets";
                 ImportTicketsButton.Background = new SolidColorBrush(Color.FromRgb(33, 150, 243));
             }
@@ -318,13 +316,13 @@ namespace CallMetrics
         {
             if (CallImportTypeToggle.IsChecked == false)
             {
-                Settings.CallImportType = ImportType.Five9;
+                Settings.Data.CallImportType = ImportType.Five9;
                 ImportCallsButton.Content = "Import Five9 Calls";
                 ImportCallsButton.Background = new SolidColorBrush(Color.FromRgb(10, 109, 187));
             }
             else
             {
-                Settings.CallImportType = ImportType.Nextiva;
+                Settings.Data.CallImportType = ImportType.Nextiva;
                 ImportCallsButton.Content = "Import Nextiva Calls";
                 ImportCallsButton.Background = new SolidColorBrush(Color.FromRgb(33, 150, 243));
             }

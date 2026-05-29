@@ -15,7 +15,7 @@ namespace CallMetrics.Controllers.Readers.Dynamics
         {
             // open explorer to select file
             var openFileDialog = new Microsoft.Win32.OpenFileDialog();
-            openFileDialog.DefaultDirectory = Settings.DefaultReportPath;
+            openFileDialog.DefaultDirectory = Settings.Data.DefaultReportPath;
             openFileDialog.DefaultExt = ".csv";
             openFileDialog.Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*";
 

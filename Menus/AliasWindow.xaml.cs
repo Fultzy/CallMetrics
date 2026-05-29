@@ -38,7 +38,7 @@ namespace CallMetrics.Menus
         private void RefreshAliasList()
         {
             AliasesPanel.Children.Clear();
-            foreach (var alias in Settings.Aliases.OrderBy(a => a.Name))
+            foreach (var alias in Settings.Data.Aliases.OrderBy(a => a.Name))
             {
                 var aliasItem = new AliasItem(alias);
                 AliasesPanel.Children.Add(aliasItem);
@@ -48,7 +48,7 @@ namespace CallMetrics.Menus
         private void RefreshRepsList()
         {
             LooseRepsPanel.Children.Clear();
-            var aliasedReps = Settings.Aliases.SelectMany(a => a.AliasedTo).Distinct().ToList();
+            var aliasedReps = Settings.Data.Aliases.SelectMany(a => a.AliasedTo).Distinct().ToList();
             var freeReps = _reps.Where(r => !aliasedReps.Contains(r.Name)).OrderBy(r => r.Name).ToList();
             foreach (var rep in freeReps)
             {
@@ -60,7 +60,7 @@ namespace CallMetrics.Menus
 
         private void NewAliasButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Settings.Aliases.Any(t => t.Name.Equals(_newAliasName, StringComparison.OrdinalIgnoreCase)))
+            if (Settings.Data.Aliases.Any(t => t.Name.Equals(_newAliasName, StringComparison.OrdinalIgnoreCase)))
             {
                 MessageBox.Show("An Alias with this name already exists. Please choose a different name.", "Duplicate Alias Name", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
@@ -81,7 +81,7 @@ namespace CallMetrics.Menus
                 AliasedTo = new List<string>()
             };
 
-            Settings.Aliases.Add(newAlias);
+            Settings.Data.Aliases.Add(newAlias);
             Settings.Save();
 
             var aliasItem = new AliasItem(newAlias);
@@ -156,7 +156,7 @@ namespace CallMetrics.Menus
                     this.RemoveLogicalChild(item);
                 }
 
-                foreach (var kvp in Settings.Aliases.Where(k => k.AliasedTo.Contains(item.RepName)))
+                foreach (var kvp in Settings.Data.Aliases.Where(k => k.AliasedTo.Contains(item.RepName)))
                 {
                     kvp.AliasedTo.Remove(item.RepName);
                 }

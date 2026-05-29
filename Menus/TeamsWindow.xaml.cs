@@ -37,7 +37,7 @@ namespace CallMetrics.Menus
         private void AddNewTeam_Click(object sender, RoutedEventArgs e)
         {
 
-            if (Settings.Teams.Any(t => t.Name.Equals(_newTeamName, StringComparison.OrdinalIgnoreCase)))
+            if (Settings.Data.Teams.Any(t => t.Name.Equals(_newTeamName, StringComparison.OrdinalIgnoreCase)))
             {
                 MessageBox.Show("A team with this name already exists. Please choose a different name.", "Duplicate Team Name", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
@@ -52,7 +52,7 @@ namespace CallMetrics.Menus
             // Capitalize first letter of each word
             _newTeamName = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(_newTeamName.ToLower());
 
-            Settings.Teams.Add(new Team
+            Settings.Data.Teams.Add(new Team
             {
                 Name = _newTeamName,
                 Members = new List<string>(),
@@ -102,9 +102,9 @@ namespace CallMetrics.Menus
 
         private void DeleteTeam(string teamName)
         {
-            var Teams = Settings.Teams;
+            var Teams = Settings.Data.Teams;
 
-            var teamToDelete = Settings.Teams.FirstOrDefault(t => t.Name == teamName);
+            var teamToDelete = Settings.Data.Teams.FirstOrDefault(t => t.Name == teamName);
             if (!teamToDelete.Equals(default(SettingsData)))
             {
                 if (teamToDelete.Members.Count > 0)
@@ -113,14 +113,14 @@ namespace CallMetrics.Menus
 
                     if (result == MessageBoxResult.Yes)
                     {
-                        Settings.Teams.Remove(teamToDelete);
+                        Settings.Data.Teams.Remove(teamToDelete);
                         Settings.Save();
                         RefreshTeamsList();
                     }
                 }
                 else
                 {
-                    Settings.Teams.Remove(teamToDelete);
+                    Settings.Data.Teams.Remove(teamToDelete);
                     Settings.Save();
                     RefreshTeamsList();
                 }
@@ -132,7 +132,7 @@ namespace CallMetrics.Menus
             TeamsListBox.Children.Clear();
             Settings.Load();
 
-            var teamsCopy = Settings.Teams.ToList();
+            var teamsCopy = Settings.Data.Teams.ToList();
 
             foreach (var team in teamsCopy)
             {
@@ -159,7 +159,7 @@ namespace CallMetrics.Menus
 
             foreach (var rep in _reps)
             {
-                if (!Settings.Teams.Any(t => t.Members.Contains(rep.Name)))
+                if (!Settings.Data.Teams.Any(t => t.Members.Contains(rep.Name)))
                 {
                     // fixed a bug that included average user after report generation
                     if (rep.Name == "-- AVERAGE --") continue;
@@ -195,7 +195,7 @@ namespace CallMetrics.Menus
                     this.RemoveLogicalChild(item);
                 }
 
-                foreach (var kvp in Settings.Teams.Where(k => k.Members.Contains(item.RepName)))
+                foreach (var kvp in Settings.Data.Teams.Where(k => k.Members.Contains(item.RepName)))
                 {
                     kvp.Members.Remove(item.RepName);
                 }

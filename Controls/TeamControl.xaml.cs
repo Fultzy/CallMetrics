@@ -39,7 +39,7 @@ namespace CallMetrics.Controls
             TeamName = teamName;
             TeamNameTextbox.Text = teamName;
 
-            Team team = Settings.Teams.Where(t => t.Name == TeamName).FirstOrDefault();
+            Team team = Settings.Data.Teams.Where(t => t.Name == TeamName).FirstOrDefault();
             if (team.Equals(default(SettingsData)))
                 return;
 
@@ -84,23 +84,23 @@ namespace CallMetrics.Controls
 
         private void TeamNameTextbox_TextChanged(object sender, RoutedEventArgs e)
         {
-            var existingTeam = Settings.Teams.FirstOrDefault(a => a.Name == TeamName);
-            if (!existingTeam.IsNull() && IsLoaded)
+            var existingTeam = Settings.Data.Teams.FirstOrDefault(a => a.Name == TeamName);
+            if (existingTeam != null && !existingTeam.IsNull() && IsLoaded)
             {
                 // remove existing team
-                Settings.Teams.Remove(existingTeam);
+                Settings.Data.Teams.Remove(existingTeam);
 
                 // readd updated team name and add back to settings
                 existingTeam.Name = TeamNameTextbox.Text.Trim();
                 TeamName = existingTeam.Name;
-                Settings.Teams.Add(existingTeam);
+                Settings.Data.Teams.Add(existingTeam);
                 Settings.Save();
             }
         }
 
         public void RefreshTeamMembers()
         {
-            Team team = Settings.Teams.Where(t => t.Name == TeamName).FirstOrDefault();
+            Team team = Settings.Data.Teams.Where(t => t.Name == TeamName).FirstOrDefault();
             if (team.Equals(default(SettingsData)))
                 return;
             
@@ -115,12 +115,12 @@ namespace CallMetrics.Controls
         // Checkboxes
         public void IncludeInMetricsCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            int teamIndex = Settings.Data.Teams.FindIndex(t => t.Name == TeamName);
             if (teamIndex >= 0)
             {
-                var updatedTeam = Settings.Teams[teamIndex];
+                var updatedTeam = Settings.Data.Teams[teamIndex];
                 updatedTeam.IncludeInMetrics = true;
-                Settings.Teams[teamIndex] = updatedTeam;
+                Settings.Data.Teams[teamIndex] = updatedTeam;
 
                 Settings.Save();
             }
@@ -128,12 +128,12 @@ namespace CallMetrics.Controls
 
         public void IncludeInMetricsCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            int teamIndex = Settings.Data.Teams.FindIndex(t => t.Name == TeamName);
             if (teamIndex >= 0)
             {
-                var updatedTeam = Settings.Teams[teamIndex];
+                var updatedTeam = Settings.Data.Teams[teamIndex];
                 updatedTeam.IncludeInMetrics = false;
-                Settings.Teams[teamIndex] = updatedTeam;
+                Settings.Data.Teams[teamIndex] = updatedTeam;
 
                 Settings.Save();
             }
@@ -142,13 +142,13 @@ namespace CallMetrics.Controls
         public void IsDepartmentCheckBox_Checked(object sender, RoutedEventArgs e)
         {
 
-            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            int teamIndex = Settings.Data.Teams.FindIndex(t => t.Name == TeamName);
             if (teamIndex >= 0)
             {
-                var updatedTeam = Settings.Teams[teamIndex];
+                var updatedTeam = Settings.Data.Teams[teamIndex];
                 updatedTeam.IsDepartment = true;
                 updatedTeam.IncludeInMetrics = false;
-                Settings.Teams[teamIndex] = updatedTeam;
+                Settings.Data.Teams[teamIndex] = updatedTeam;
 
                 var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFA9A6A6"));
                 IncludeLabel.Foreground = brush;
@@ -163,12 +163,12 @@ namespace CallMetrics.Controls
 
         public void IsDepartmentCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            int teamIndex = Settings.Data.Teams.FindIndex(t => t.Name == TeamName);
             if (teamIndex >= 0)
             {
-                var updatedTeam = Settings.Teams[teamIndex];
+                var updatedTeam = Settings.Data.Teams[teamIndex];
                 updatedTeam.IsDepartment = false;
-                Settings.Teams[teamIndex] = updatedTeam;
+                Settings.Data.Teams[teamIndex] = updatedTeam;
 
                 // #FFFFFFFF
                 var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFFFFFFF"));
@@ -181,15 +181,15 @@ namespace CallMetrics.Controls
 
         public void HideTeamCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            int teamIndex = Settings.Data.Teams.FindIndex(t => t.Name == TeamName);
             if (teamIndex >= 0)
             {
-                var updatedTeam = Settings.Teams[teamIndex];
+                var updatedTeam = Settings.Data.Teams[teamIndex];
                 updatedTeam.HideTeam = true;
                 updatedTeam.IncludeInMetrics = false;
                 updatedTeam.IsDepartment = false;
 
-                Settings.Teams[teamIndex] = updatedTeam;
+                Settings.Data.Teams[teamIndex] = updatedTeam;
                 Settings.Save();
 
                 var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFA9A6A6"));
@@ -208,15 +208,15 @@ namespace CallMetrics.Controls
 
         public void HideTeamCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            int teamIndex = Settings.Data.Teams.FindIndex(t => t.Name == TeamName);
             if (teamIndex >= 0)
             {
-                var updatedTeam = Settings.Teams[teamIndex];
+                var updatedTeam = Settings.Data.Teams[teamIndex];
                 updatedTeam.HideTeam = false;
                 updatedTeam.IncludeInMetrics = false;
                 updatedTeam.IsDepartment = false;
 
-                Settings.Teams[teamIndex] = updatedTeam;
+                Settings.Data.Teams[teamIndex] = updatedTeam;
                 Settings.Save();
 
                 var brush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFFFFFFF"));
@@ -231,24 +231,24 @@ namespace CallMetrics.Controls
 
         public void ExcludeTeamCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            int teamIndex = Settings.Data.Teams.FindIndex(t => t.Name == TeamName);
             if (teamIndex >= 0)
             {
-                var updatedTeam = Settings.Teams[teamIndex];
+                var updatedTeam = Settings.Data.Teams[teamIndex];
                 updatedTeam.IsExcluded = true;
-                Settings.Teams[teamIndex] = updatedTeam;
+                Settings.Data.Teams[teamIndex] = updatedTeam;
                 Settings.Save();
             }
         }
 
         public void ExcludeTeamCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            int teamIndex = Settings.Teams.FindIndex(t => t.Name == TeamName);
+            int teamIndex = Settings.Data.Teams.FindIndex(t => t.Name == TeamName);
             if (teamIndex >= 0)
             {
-                var updatedTeam = Settings.Teams[teamIndex];
+                var updatedTeam = Settings.Data.Teams[teamIndex];
                 updatedTeam.IsExcluded = false;
-                Settings.Teams[teamIndex] = updatedTeam;
+                Settings.Data.Teams[teamIndex] = updatedTeam;
                 Settings.Save();
             }
         }
@@ -265,7 +265,7 @@ namespace CallMetrics.Controls
 
         private void RepsWrapPanel_Drop(object sender, DragEventArgs e)
         {
-            Team team = Settings.Teams.Where(t => t.Name == TeamName).FirstOrDefault();
+            Team team = Settings.Data.Teams.Where(t => t.Name == TeamName).FirstOrDefault();
             if (team.IsNull())
                 return;
 
@@ -283,7 +283,7 @@ namespace CallMetrics.Controls
                     this.RemoveLogicalChild(item);
                 }
 
-                foreach (var tm in Settings.Teams.Where(t => t.Members.Contains(item.RepName)))
+                foreach (var tm in Settings.Data.Teams.Where(t => t.Members.Contains(item.RepName)))
                 {
                     tm.Members.Remove(item.RepName);
                 }

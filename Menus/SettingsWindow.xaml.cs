@@ -29,22 +29,22 @@ namespace CallMetrics.Menus
 
         public void ApplySettings(object sender, RoutedEventArgs e)
         {
-            if (Settings.RankedRepsCount < 1 || Settings.RankedRepsCount > 999)
-                Settings.RankedRepsCount = 10;
+            if (Settings.Data.RankedRepsCount < 1 || Settings.Data.RankedRepsCount > 999)
+                Settings.Data.RankedRepsCount = 10;
 
-            NumberOfRowsTextBox.Text = Settings.RankedRepsCount.ToString();
-            AutoOpenReportCheckBox.IsChecked = Settings.AutoOpenReport;
-            DefaultSaveLocationTextBlock.Text = Settings.DefaultReportPath;
+            NumberOfRowsTextBox.Text = Settings.Data.RankedRepsCount.ToString();
+            AutoOpenReportCheckBox.IsChecked = Settings.Data.AutoOpenReport;
+            DefaultSaveLocationTextBlock.Text = Settings.Data.DefaultReportPath;
 
             InboundTypesPanel.Children.Clear();
-            foreach (var callType in Settings.InboundCallTypes)
+            foreach (var callType in Settings.Data.InboundCallTypes)
             {
                 var item = new Controls.CallTypeItem(callType, true);
                 InboundTypesPanel.Children.Add(item);
             }
 
             OutboundTypesPanel.Children.Clear();
-            foreach (var callType in Settings.OutboundCallTypes)
+            foreach (var callType in Settings.Data.OutboundCallTypes)
             {
                 var item = new Controls.CallTypeItem(callType, false);
                 OutboundTypesPanel.Children.Add(item);
@@ -55,12 +55,12 @@ namespace CallMetrics.Menus
         {
             // open explorer to select file
             var openFolderDialog = new Microsoft.Win32.OpenFolderDialog();
-            openFolderDialog.DefaultDirectory = Settings.DefaultReportPath;
+            openFolderDialog.DefaultDirectory = Settings.Data.DefaultReportPath;
             var result = openFolderDialog.ShowDialog();
             if (result == true)
             {
                 DefaultSaveLocationTextBlock.Text = openFolderDialog.FolderName;
-                Settings.DefaultReportPath = openFolderDialog.FolderName;
+                Settings.Data.DefaultReportPath = openFolderDialog.FolderName;
                 Settings.Save();
             }
         }
@@ -69,7 +69,7 @@ namespace CallMetrics.Menus
         {
             try
             {
-                System.Diagnostics.Process.Start("explorer.exe", Settings.DefaultReportPath);
+                System.Diagnostics.Process.Start("explorer.exe", Settings.Data.DefaultReportPath);
             }
             catch (Exception ex)
             {
@@ -84,7 +84,7 @@ namespace CallMetrics.Menus
             {
                 if (value >= 1 && value <= 999)
                 {
-                    Settings.RankedRepsCount = value;
+                    Settings.Data.RankedRepsCount = value;
                     Settings.Save();
                 }
             }
@@ -92,20 +92,20 @@ namespace CallMetrics.Menus
 
         private void DecreaseRowsButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Settings.RankedRepsCount > 1 && Settings.RankedRepsCount < 999)
+            if (Settings.Data.RankedRepsCount > 1 && Settings.Data.RankedRepsCount < 999)
             {
-                Settings.RankedRepsCount--;
-                NumberOfRowsTextBox.Text = Settings.RankedRepsCount.ToString();
+                Settings.Data.RankedRepsCount--;
+                NumberOfRowsTextBox.Text = Settings.Data.RankedRepsCount.ToString();
                 Settings.Save();
             }
         }
 
         private void IncreaseRowsButton_Click(object sender, RoutedEventArgs e)
         {
-            if (Settings.RankedRepsCount >= 1 && Settings.RankedRepsCount < 999)
+            if (Settings.Data.RankedRepsCount >= 1 && Settings.Data.RankedRepsCount < 999)
             {
-                Settings.RankedRepsCount++;
-                NumberOfRowsTextBox.Text = Settings.RankedRepsCount.ToString();
+                Settings.Data.RankedRepsCount++;
+                NumberOfRowsTextBox.Text = Settings.Data.RankedRepsCount.ToString();
                 Settings.Save();
             }
         }
@@ -123,13 +123,13 @@ namespace CallMetrics.Menus
 
         private void AutoOpenReportCheckBox_Checked(object sender, RoutedEventArgs e)
         {
-            Settings.AutoOpenReport = true;
+            Settings.Data.AutoOpenReport = true;
             Settings.Save();
         }
 
         private void AutoOpenReportCheckBox_Unchecked(object sender, RoutedEventArgs e)
         {
-            Settings.AutoOpenReport = false;
+            Settings.Data.AutoOpenReport = false;
             Settings.Save();
         }
 
@@ -138,9 +138,9 @@ namespace CallMetrics.Menus
             var input = NewInboundTypeTextBox.Text.Trim().ToLower();
             if (!string.IsNullOrWhiteSpace(input))
             {
-                if (!Settings.InboundCallTypes.Contains(input))
+                if (!Settings.Data.InboundCallTypes.Contains(input))
                 {
-                    Settings.InboundCallTypes.Add(input);
+                    Settings.Data.InboundCallTypes.Add(input);
                     Settings.Save();
                     ApplySettings(this, null);
 
@@ -158,9 +158,9 @@ namespace CallMetrics.Menus
             var input = NewOutboundTypeTextBox.Text.Trim().ToLower();
             if (!string.IsNullOrWhiteSpace(input))
             {
-                if (!Settings.OutboundCallTypes.Contains(input))
+                if (!Settings.Data.OutboundCallTypes.Contains(input))
                 {
-                    Settings.OutboundCallTypes.Add(input);
+                    Settings.Data.OutboundCallTypes.Add(input);
                     Settings.Save();
                     ApplySettings(this, null);
 

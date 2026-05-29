@@ -48,7 +48,7 @@ namespace CallMetrics.Controllers.Generators
 
                 ReportProgressChanged.Invoke(this, 100);
 
-                if (Settings.AutoOpenReport)
+                if (Settings.Data.AutoOpenReport)
                 {
                     System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo()
                     {

@@ -1,13 +1,14 @@
-﻿using CallMetrics.Models;
+﻿using CallMetrics.Menus;
+using CallMetrics.Models;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
+using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
 using System.Windows;
-using System.IO;
-using System.Drawing;
 
 
 namespace CallMetrics.Utilities
@@ -15,97 +16,161 @@ namespace CallMetrics.Utilities
     [Serializable]
     public static class Settings
     {
-        // current running directory
-        private static string Path = Directory.GetCurrentDirectory() + "/Settings.json";
+        public static SettingsData Data;
 
-        public static string DefaultReportPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-        public static int RankedRepsCount = 10;
-        public static bool AutoOpenReport = false;
-        public static ImportType TicketImportType = ImportType.CallTracker;
-        public static ImportType CallImportType = ImportType.Five9;
+        // paths for portable (working directory) and persistent (AppData) settings
+        private static string BackupPath = Path.Combine(Directory.GetCurrentDirectory(), "Settings.json");
+        private static string AppDataSettingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "CallMetrics", "Settings.json");
 
-        public static List<string> InboundCallTypes = new() { "Inbound" };
-        public static List<string> OutboundCallTypes = new() { "Outbound" };
-
-        public static List<Team> Teams = new();
-        public static List<Alias> Aliases = new();
-
+        static Settings()
+        {
+            Data = new SettingsData();
+        }
 
         public static void Load()
         {
-            if (System.IO.File.Exists(Path))
+            try
             {
-                try
-                {
-                    var json = System.IO.File.ReadAllText(Path);
-                    var data = JsonConvert.DeserializeObject<SettingsData>(json);
-                    
-                    Teams = data.Teams;
-                    RankedRepsCount = data.RankedRepsCount;
-                    AutoOpenReport = data.AutoOpenReport;
+                var hasPortable = File.Exists(BackupPath);
+                var hasAppData = File.Exists(AppDataSettingsPath);
 
-                    if (Directory.Exists(data.DefaultReportPath))
-                        DefaultReportPath = data.DefaultReportPath;
-                    else
-                        DefaultReportPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-
-                    CallImportType = data.CallImportType;
-                    
-                    InboundCallTypes = data.InboundCallTypes;
-                    OutboundCallTypes = data.OutboundCallTypes;
-                    
-                    TicketImportType = data.TicketImportType;
-                    Aliases = data.Aliases;
-                }
-                catch (Exception ex)
+                // If both exist, check for conflicts
+                if (hasPortable && hasAppData)
                 {
-                    var msg = Logger.ExceptionLog("Error loading settings. Using defaults.\n" + ex.Message);
-                    MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    var portableText = File.ReadAllText(BackupPath);
+                    var appDataText = File.ReadAllText(AppDataSettingsPath);
+
+                    var backupSettings = JsonConvert.DeserializeObject<SettingsData>(portableText);
+                    var appDataSettings = JsonConvert.DeserializeObject<SettingsData>(appDataText);
+
+                    // if identical, just load one
+                    if (string.Equals(portableText, appDataText, StringComparison.Ordinal))
+                    {
+                        Data = backupSettings;
+                        return;
+                    }
+
+                    var prompt = new SettingsConflictWindow(backupSettings, appDataSettings);
+                    
+                    try
+                    {
+                        prompt.ShowDialog();
+                    }
+                    catch
+                    {
+                        // close the program
+                        App.Current.Shutdown();
+                    }
+                    
+
+                    if (prompt.ApplyNewSettings)
+                    {
+                        if (backupSettings != null) Data = backupSettings;
+
+                        Backup(AppDataSettingsPath); // backup and replace other
+                        File.Copy(BackupPath, AppDataSettingsPath, true);
+                        return;
+                    }
+                    else if (!prompt.ApplyNewSettings)
+                    {
+                        if (appDataSettings != null) Data = appDataSettings;
+                        
+                        Backup(BackupPath); // backup and replace other
+                        File.Copy(AppDataSettingsPath, BackupPath, true);
+                        return;
+                    }
+
+                    Data = backupSettings;
+                    return;
                 }
-            }
-            else
-            {
+
+                // If only one exists, load it and ensure the other is populated
+                if (hasAppData)
+                {
+                    var json = File.ReadAllText(AppDataSettingsPath);
+                    var appDataSettings = JsonConvert.DeserializeObject<SettingsData>(json);
+                    
+                    if (appDataSettings != null) Data = appDataSettings;
+
+                    try
+                    {
+                        File.Copy(AppDataSettingsPath, BackupPath, true);
+                    }
+                    catch { }
+
+                    return;
+                }
+
+                if (hasPortable)
+                {
+                    var json = File.ReadAllText(BackupPath);
+                    var backupSettings = JsonConvert.DeserializeObject<SettingsData>(json);
+                    
+                    if (backupSettings != null) Data = backupSettings;
+
+                    try
+                    {
+                        File.Copy(BackupPath, AppDataSettingsPath, true);
+                    }
+                    catch { }
+
+                    return;
+                }
+
                 // no settings file, use defaults
-                Teams = new List<Team>();
-                RankedRepsCount = 10;
-                AutoOpenReport = false;
-                DefaultReportPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
+                Data.Teams = new List<Team>();
+                Data.RankedRepsCount = 10;
+                Data.AutoOpenReport = false;
+                Data.DefaultReportPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
 
                 Save();
             }
+            catch (Exception ex)
+            {
+                var msg = Logger.ExceptionLog("Error loading settings. Using defaults.\n" + ex.Message);
+                MessageBox.Show(msg, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        public static void Backup(string filepath)
+        {
+            var backup = filepath + ".bak." + DateTime.UtcNow.ToString("yyyyMMddHHmmss");
+            try { File.Copy(filepath, backup, true); } catch { }
+        }
+
+        public static void Reset()
+        {
+            Data = new SettingsData();
+            Save();
         }
 
         public static bool Save()
         {
-            var directory = System.IO.Path.GetDirectoryName(Path);
-            if (!System.IO.Directory.Exists(directory))
+            var backupDir = System.IO.Path.GetDirectoryName(BackupPath);
+            var portableDir = System.IO.Path.GetDirectoryName(AppDataSettingsPath);
+            if (!System.IO.Directory.Exists(backupDir))
             {
-                System.IO.Directory.CreateDirectory(directory);
+                System.IO.Directory.CreateDirectory(backupDir);
+            }
+
+            if (!System.IO.Directory.Exists(portableDir))
+            {
+                System.IO.Directory.CreateDirectory(portableDir);
             }
 
             try
             {
                 // BUGFIX: force inbound and outbound types as lowercase
-                InboundCallTypes = InboundCallTypes.Select(t => t.ToLower()).ToList();
-                OutboundCallTypes = OutboundCallTypes.Select(t => t.ToLower()).ToList();
+                Data.InboundCallTypes = Data.InboundCallTypes.Select(t => t.ToLower()).ToList();
+                Data.OutboundCallTypes = Data.OutboundCallTypes.Select(t => t.ToLower()).ToList();
 
-                var data = new SettingsData
-                {
-                    Teams = Teams,
-                    RankedRepsCount = RankedRepsCount,
-                    AutoOpenReport = AutoOpenReport,
-                    DefaultReportPath = DefaultReportPath,
-                    CallImportType = CallImportType,
-                   
-                    InboundCallTypes = InboundCallTypes,
-                    OutboundCallTypes = OutboundCallTypes,
-                    
-                    TicketImportType = TicketImportType,
-                    Aliases = Aliases,
-                };
+                Data.Version = App.Version; // update version
+                Data.LastSave = DateTime.Now;
 
-                var json = JsonConvert.SerializeObject(data, Formatting.Indented);
-                System.IO.File.WriteAllText(Path, json);
+                var json = JsonConvert.SerializeObject(Data, Formatting.Indented);
+
+                System.IO.File.WriteAllText(BackupPath, json);
+                System.IO.File.WriteAllText(AppDataSettingsPath, json);
 
                 return true;
             }
@@ -117,95 +182,5 @@ namespace CallMetrics.Utilities
             }
         }
     }
-
-
-    [Serializable]
-    public struct SettingsData
-    {
-        public string DefaultReportPath;
-        public int RankedRepsCount;
-        public bool AutoOpenReport;
-        public ImportType TicketImportType;
-        public ImportType CallImportType;
-
-        public List<string> InboundCallTypes;
-        public List<string> OutboundCallTypes;
-        
-        public List<Team> Teams;
-        public List<Alias> Aliases;
-
-        public SettingsData()
-        {
-            DefaultReportPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop);
-            RankedRepsCount = 10;
-            AutoOpenReport = false;
-            TicketImportType = ImportType.CallTracker;
-            CallImportType = ImportType.Nextiva;
-            
-            InboundCallTypes = new List<string> { "inbound" };
-            OutboundCallTypes = new List<string> { "outbound" };
-            
-            Teams = new List<Team>();
-            Aliases = new List<Alias>();
-        }
-    }
-
-    public enum ImportType
-    {
-        CallTracker,
-        Dynamics,
-        Nextiva,
-        Five9,
-        None,
-    }
-
-
-    [Serializable]
-    public struct Team
-    {
-        public string Name;
-
-        public bool IncludeInMetrics;
-        public bool IsDepartment;
-        public bool HideTeam;
-        public bool IsExcluded;
-
-        public List<string> Members;
-
-        public bool IsNull()
-        {
-            return this.Equals(default(Team));
-        }
-    }
-
-    [Serializable]
-    public struct Alias
-    {
-        public string Name;
-        public List<string> AliasedTo;
-        public ImportType AddedFrom;
-
-        public bool IsNull()
-        {
-            var n = string.IsNullOrEmpty(Name);
-            var a = AliasedTo == null || AliasedTo.Count == 0;
-
-            return n && a;
-        }
-
-        public override string ToString()
-        {
-            return string.Join(", ", AliasedTo);
-        }
-
-        public bool For(string name)
-        {
-            if (name == null) throw new ArgumentNullException("name");
-
-            return AliasedTo.Any(n => n.Equals(name, StringComparison.OrdinalIgnoreCase));
-        }
-    }
-
-
 }
 

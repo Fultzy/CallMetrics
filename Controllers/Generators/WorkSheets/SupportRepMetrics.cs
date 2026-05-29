@@ -29,7 +29,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
         public Rep TotalRep = null;
 
         public Dictionary<string, int> TicketsFormulaSourceRows = new();
-        public int rankCount = Settings.RankedRepsCount;
+        public int rankCount = Settings.Data.RankedRepsCount;
 
         private double percentageStep = 0;
         private double currentProgress = 0;
@@ -146,7 +146,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
             // calculate progress step
             currentProgress = 0;
-            var teamTables = Settings.Teams.Count(t => t.IncludeInMetrics && t.Members.Count > 0);
+            var teamTables = Settings.Data.Teams.Count(t => t.IncludeInMetrics && t.Members.Count > 0);
             percentageStep = SupportMetricsHelper.CalculateProgressSteps(Departments.Count, Reps.Count, rankCount, teamTables);
 
             // set Date Range
@@ -189,21 +189,21 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
         private void ButcketReps(List<Rep> importReps)
         {
-            Departments = importReps.Where(r => Settings.Teams.Any(t =>
+            Departments = importReps.Where(r => Settings.Data.Teams.Any(t =>
                 t.Members.Contains(r.Name) &&
                 t.IsDepartment == true)).ToList();
 
-            Teams = Settings.Teams.Where(t => t.IncludeInMetrics && t.Members.Count > 0).ToList();
+            Teams = Settings.Data.Teams.Where(t => t.IncludeInMetrics && t.Members.Count > 0).ToList();
 
-            Reps = importReps.Where(r => Settings.Teams.Any(t =>
+            Reps = importReps.Where(r => Settings.Data.Teams.Any(t =>
                 t.Members.Contains(r.Name) &&
                 t.IncludeInMetrics == true)).ToList();
 
-            ExcludeReps = Reps.Where(r => Settings.Teams.Any(t =>
+            ExcludeReps = Reps.Where(r => Settings.Data.Teams.Any(t =>
                 t.Members.Contains(r.Name) &&
                 t.IsExcluded == true)).ToList();
 
-            IncludedReps = importReps.Where(r => Settings.Teams.Any(t => t.Members.Contains(r.Name) && t.IncludeInMetrics && !t.IsExcluded)).ToList();
+            IncludedReps = importReps.Where(r => Settings.Data.Teams.Any(t => t.Members.Contains(r.Name) && t.IncludeInMetrics && !t.IsExcluded)).ToList();
 
             WeekendReps = Reps.Where(r => r.WeekendCalls > 0 || r.WeekendTickets > 0).ToList();
         }
@@ -330,7 +330,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             if (rep == null)
                 return worksheet;
 
-            var team = Settings.Teams.FirstOrDefault(t => t.Members.Contains(rep.Name));
+            var team = Settings.Data.Teams.FirstOrDefault(t => t.Members.Contains(rep.Name)) ?? new Team();
 
             try
             {
@@ -1050,7 +1050,7 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
 
         private Worksheet AddEachTeamsMetrics(List<Rep> reps, Worksheet worksheet, int row, out int newRow)
         {
-            foreach (var team in Settings.Teams)
+            foreach (var team in Settings.Data.Teams)
             {
                 if (team.Members.Count == 0)
                     continue;
