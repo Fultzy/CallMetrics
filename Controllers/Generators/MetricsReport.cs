@@ -1,4 +1,5 @@
 ﻿using CallMetrics.Controllers.Generators.WorkSheets;
+using CallMetrics.Controllers.Generators.WorkSheets.RepMetrics;
 using CallMetrics.Models;
 using CallMetrics.Utilities;
 using Microsoft.Office.Interop.Excel;
@@ -28,7 +29,6 @@ namespace CallMetrics.Controllers.Generators
                 using var generator = new SupportRepMetrics();
                 generator.ProgressChanged += (s, e) => ReportProgressChanged?.Invoke(this, e);
 
-                //CloseExcel();
                 excelApp = new Microsoft.Office.Interop.Excel.Application
                 {
                     Visible = true,
@@ -38,6 +38,9 @@ namespace CallMetrics.Controllers.Generators
                 //// setup and create file
                 string fileName = @"\SupportMetrics_" + UniqueTimeCode();
                 workbook = excelApp.Workbooks.Add(Type.Missing);
+
+                // Group teams that are to be put on the same worksheet
+                //List<Team> 
 
                 //// create support metrics report worksheet
                 worksheet = (Worksheet)workbook.ActiveSheet;

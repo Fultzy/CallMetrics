@@ -1,4 +1,5 @@
-﻿using CallMetrics.Models;
+﻿using CallMetrics.Controllers.Generators.WorkSheets.RepMetrics;
+using CallMetrics.Models;
 using CallMetrics.Utilities;
 using Microsoft.Office.Interop.Excel;
 using System;
@@ -7,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CallMetrics.Controllers.Generators.WorkSheets
+namespace CallMetrics.Controllers.Generators.WorkSheets.Helpers
 {
     internal class TableHelper
     {
@@ -18,8 +19,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             List<object> values, 
             int rank = 0, bool bold = false)
         {
-            var clSrt = SupportMetricsHelper.numToLetter(columnStart);
-            var clEnd = SupportMetricsHelper.numToLetter(columnStart + values.Count - 1);
+            var clSrt = SupportMetricsHelper.NumToLetter(columnStart);
+            var clEnd = SupportMetricsHelper.NumToLetter(columnStart + values.Count - 1);
 
             for (int i = 0; i < values.Count; i++)
             {
@@ -41,8 +42,8 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             object value2, 
             int rank = 0, bool bold = false)
         {
-            var cl1 = SupportMetricsHelper.numToLetter(columnStart);
-            var cl2 = SupportMetricsHelper.numToLetter(columnStart + 1);
+            var cl1 = SupportMetricsHelper.NumToLetter(columnStart);
+            var cl2 = SupportMetricsHelper.NumToLetter(columnStart + 1);
 
             if (bold)
                 worksheet.Range[cl1 + (row + rank), cl2 + (row + rank)].Font.Bold = true;
@@ -63,9 +64,9 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             object value3,
             int rank = 0, bool bold = false)
         {
-            var cl1 = SupportMetricsHelper.numToLetter(columnStart);
-            var cl2 = SupportMetricsHelper.numToLetter(columnStart + 1);
-            var cl3 = SupportMetricsHelper.numToLetter(columnStart + 2);
+            var cl1 = SupportMetricsHelper.NumToLetter(columnStart);
+            var cl2 = SupportMetricsHelper.NumToLetter(columnStart + 1);
+            var cl3 = SupportMetricsHelper.NumToLetter(columnStart + 2);
 
             if (bold)
                 worksheet.Range[cl1 + (row + rank), cl3 + (row + rank)].Font.Bold = true;

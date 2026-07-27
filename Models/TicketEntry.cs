@@ -14,5 +14,13 @@ namespace CallMetrics.Models
         public string Description { get; internal set; }
         public string AssignedByName { get; internal set; }
         public string AssignedToName { get; internal set; }
+
+        public bool IsResolved
+        {
+            get
+            {
+                return Status.Equals("Resolved", StringComparison.OrdinalIgnoreCase);
+            }
+        }
     }
 }

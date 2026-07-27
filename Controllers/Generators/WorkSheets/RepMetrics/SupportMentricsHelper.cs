@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CallMetrics.Controllers.Generators.WorkSheets
+namespace CallMetrics.Controllers.Generators.WorkSheets.RepMetrics
 {
     internal class SupportMetricsHelper
     {
@@ -40,6 +40,12 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             int outboundOver30 = 0;
             int outboundOver60 = 0;
 
+            List<Ticket> allTickets = new();
+
+            int samedayResolvedTickets = 0;
+            int openTickets = 0;
+
+
             foreach (var rep in reps)
             {
                 if (rep.Name == "-- AVERAGE --") 
@@ -72,6 +78,11 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
                 inboundOver60 += rep.InboundCallsOver60;
                 outboundOver30 += rep.OutboundCallsOver30;
                 outboundOver60 += rep.OutboundCallsOver60;
+
+                allTickets.AddRange(rep.Tickets);
+
+                samedayResolvedTickets += rep.SameDayResolvedTickets;
+                openTickets += rep.OpenTickets;
             }
 
             // set the Total rep metrics
@@ -97,6 +108,10 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             totalUser.OutboundCallsOver30 = outboundOver30;
             totalUser.OutboundCallsOver60 = outboundOver60;
 
+            totalUser.Tickets.AddRange(allTickets);
+
+            totalUser.SameDayResolvedTickets = samedayResolvedTickets;
+            totalUser.OpenTickets = openTickets;
 
             return totalUser;
         }
@@ -139,6 +154,11 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             int outboundOver30 = 0;
             int outboundOver60 = 0;
 
+            List<Ticket> allTickets = new();
+
+            int samedayResolvedTickets = 0;
+            int openTickets = 0;
+
             // add from all genReps
             foreach (var user in reps)
             {
@@ -169,6 +189,11 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
                 inboundOver60 += user.InboundCallsOver60;
                 outboundOver30 += user.OutboundCallsOver30;
                 outboundOver60 += user.OutboundCallsOver60;
+
+                allTickets.AddRange(user.Tickets);
+
+                samedayResolvedTickets += user.SameDayResolvedTickets;
+                openTickets += user.OpenTickets;
             }
 
             // set the Total rep metrics
@@ -194,6 +219,11 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             avgUser.OutboundCallsOver30 = outboundOver30 / userCount;
             avgUser.OutboundCallsOver60 = outboundOver60 / userCount;
 
+            avgUser.Tickets.AddRange(allTickets);
+
+            avgUser.SameDayResolvedTickets = samedayResolvedTickets / userCount;
+            avgUser.OpenTickets = openTickets / userCount;
+
             return avgUser;
         }
 
@@ -213,8 +243,9 @@ namespace CallMetrics.Controllers.Generators.WorkSheets
             return steps == 0 ? 0 : 100.0 / steps;
         }
 
-        public static string numToLetter(int num)
+        public static string NumToLetter(int num)
         {
+            // Lmfao wtf
             string letter = "";
             switch (num)
             {

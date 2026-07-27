@@ -11,12 +11,12 @@ namespace CallMetrics.Data
 {
     public static class MetricsData
     {
-        public static List<Rep> Reps = new();
-        public static List<Call> Calls = new();
-        public static List<Ticket> Tickets = new();
+        public static List<Rep> Reps { get; set; } = new();
+        public static List<Call> Calls { get; set; } = new();
+        public static List<Ticket> Tickets { get; set; } = new();
 
-        private static List<Call> _rawCalls = new();
-        private static List<Ticket> _rawTickets = new();
+        private static List<Call> _rawCalls { get; set; } = new();
+        private static List<Ticket> _rawTickets { get; set; } = new();
 
 
         public static void RerunMetrics()
@@ -29,34 +29,6 @@ namespace CallMetrics.Data
 
             AddCalls(tempCalls);
             AddTickets(tempTickets);
-        }
-
-
-
-
-        private static Alias GetAliasForRepName(string repName)
-        {
-            foreach (var alias in Settings.Data.Aliases)
-            {
-                if (alias.For(repName))
-                {
-                    return alias;
-                }
-            }
-            return new Alias();
-        }
-
-        private static Alias CreateAliasForRepName(string repName)
-        {
-            var newAlias = new Alias
-            {
-                Name = repName,
-                AliasedTo = new List<string> { repName }
-            };
-
-            Settings.Data.Aliases.Add(newAlias);
-            Settings.Save();
-            return newAlias;
         }
 
         public static void AddCalls(List<Call> newCalls)
@@ -75,8 +47,7 @@ namespace CallMetrics.Data
                 return false;
             }
 
-            if (Calls.Any(c => c.DateTime == newCall.DateTime 
-        && c.Duration == newCall.Duration))
+            if (Calls.Any(c => c.DateTime == newCall.DateTime && c.Duration == newCall.Duration))
             {
                 Logger.ExceptionLog($"Duplicate call detected for DateTime: {newCall.DateTime}, Duration: {newCall.Duration}");
                 return false;
@@ -110,13 +81,14 @@ namespace CallMetrics.Data
                     return true;
                 }
 
+                Reps.Add(rep);
                 UpdateRepCallMetrics(rep, newCall);
-                Reps.Add(rep);  
             }
 
             Calls.Add(newCall);
             return true;
         }
+
 
         public static void AddTickets(List<Ticket> newTickets)
         {
@@ -195,17 +167,11 @@ namespace CallMetrics.Data
             return true;
         }
 
-        public static void Clear()
-        {
-            Reps.Clear();
-            Calls.Clear();
-            Tickets.Clear();
-            _rawCalls.Clear();
-            _rawTickets.Clear();
-        }
+        
 
         private static void UpdateRepCallMetrics(Rep rep, Call call)
         {
+            rep.Calls.Add(call);
             rep.TotalCalls += 1;
             rep.TotalDuration += call.Duration;
 
@@ -261,11 +227,64 @@ namespace CallMetrics.Data
 
         private static void UpdateRepTicketMetrics(Rep rep, Ticket ticket)
         {
+            rep.Tickets.Add(ticket);
             rep.TotalTickets += 1;
+
             if (ticket.DateTime.DayOfWeek == DayOfWeek.Saturday || ticket.DateTime.DayOfWeek == DayOfWeek.Sunday)
             {
                 rep.WeekendTickets += 1;
             }
+
+
+            // QUESTION: should we use the time when the entry was created or the time the ticket was created? ticket is created first, could be hours?
+
+            // resolved same day as created. using ticket creation time
+            if (ticket.PrimaryResolveEntry != null && ticket.PrimaryResolveEntry.DateTime.Date == ticket.DateTime.Date)
+            {
+                rep.SameDayResolvedTickets += 1;
+            }
+
+            // open tickets at this moment
+            if (ticket.TicketEntries.Last().Status == "Open")
+            {
+                rep.OpenTickets += 1;
+            }
         }
+
+        public static void Clear()
+        {
+            Reps.Clear();
+            Calls.Clear();
+            Tickets.Clear();
+            _rawCalls.Clear();
+            _rawTickets.Clear();
+        }
+
+        // Helpers
+        private static Alias GetAliasForRepName(string repName)
+        {
+            foreach (var alias in Settings.Data.Aliases)
+            {
+                if (alias.For(repName))
+                {
+                    return alias;
+                }
+            }
+            return new Alias();
+        }
+
+        private static Alias CreateAliasForRepName(string repName)
+        {
+            var newAlias = new Alias
+            {
+                Name = repName,
+                AliasedTo = new List<string> { repName }
+            };
+
+            Settings.Data.Aliases.Add(newAlias);
+            Settings.Save();
+            return newAlias;
+        }
+
     }
 }

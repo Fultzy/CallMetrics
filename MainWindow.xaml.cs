@@ -52,6 +52,11 @@ namespace CallMetrics
             RepsDataGrid.ItemsSource = MetricsData.Reps;
          
             VersionLabel.Content = $"v{App.Version}"; // oof
+
+            //this.Loaded += async (s, e) =>
+            //{
+                //await Updates.CheckForUpdates(); // disabled, needs work
+            //};
         }
 
         public void UpdateProgressBar(int value)

@@ -2,41 +2,58 @@
 
 
 using CallMetrics.Utilities;
+using System.Security.RightsManagement;
 
 namespace CallMetrics.Models
 {
     
     public class Rep
     {
+        public List<Ticket> Tickets = new();
+        public List<Call> Calls = new();
+
         public string Name { get; set; } = "None";
         public string Extension { get; set; } = "None";
+
 
         // Tickets
         public int TotalTickets { get; set; } = 0;
         public int WeekendTickets { get; set; } = 0;
-        
+        public int OpenTickets { get; set; } = 0; 
+        public int SameDayResolvedTickets { get; set; } = 0;
 
 
         // Calls
         public int TotalCalls { get; set; } = 0;
         public int TotalDuration { get; set; } = 0;
+        public int WeekendCalls { get; set; } = 0;
+        public int InternalCalls { get; set; } = 0;
 
         public int InboundCalls { get; set; } = 0;
         public int InboundDuration { get; set; } = 0;
-
         public int OutboundCalls { get; set; } = 0;
         public int OutboundDuration { get; set; } = 0;
 
         public int CallsOver30 { get; set; } = 0;
         public int CallsOver60 { get; set; } = 0;
-
         public int InboundCallsOver30 { get; set; } = 0;
         public int InboundCallsOver60 { get; set; } = 0;
         public int OutboundCallsOver30 { get; set; } = 0;
         public int OutboundCallsOver60 { get; set; } = 0;
 
-        public int WeekendCalls { get; set; } = 0;
-        public int InternalCalls { get; set; } = 0;
+        
+        public string AverageTicketResolutionTimeFormatted()
+        {
+            return Formatter.Duration
+            (
+                AverageTicketResolutionSeconds()
+            );
+        }
+
+        public int AverageTicketResolutionSeconds()
+        {
+            return Tickets.Count == 0 ? 0 : Tickets.Sum(t => t.ResolutionTime) / Tickets.Count;
+        }
 
         public int AverageCallTime()
         {
